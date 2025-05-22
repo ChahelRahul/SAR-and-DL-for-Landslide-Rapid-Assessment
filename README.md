@@ -1,4 +1,4 @@
-# SAR-based Landslide Rapid Assessment (SAR-LRA) Tool
+# SAR-based Landslide Rapid Detection (SAR-LRA) Tool
 
 ## 📒 Get Started
 
