@@ -6,7 +6,9 @@
 
 Click the badge below to launch:
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://github.com/lorenzonava96/SAR-and-DL-for-Landslide-Rapid-Assessment/blob/main/SAR-LRA%20Tool%20V1%20for%20Google%20Colaboratory/SAR_LRA_Tool_V1_Google_Colaboratory.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github.com/lorenzonava96/SAR-and-DL-for-Landslide-Rapid-Assessment/blob/main/SAR-LRA%20Tool%20V1%20for%20Google%20Colaboratory/SAR_LRA_Tool_V1_Google_Colaboratory.ipynb)
+
+__________________________________________________
 
 In this repository, we introduce a practical, all-weather, day-night SAR-based Landslide Rapid Assessment tool (SAR-LRA). Utilizing Deep Neural Networks (DNN), this tool is tailored for landslide detection during earthquake-triggered multiple landslide events (MLEs). For further details, please consult the preprint "Sentinel-1 SAR-based Globally Distributed Landslide Detection by Deep Neural Networks" by [Nava et al (2024)](https://eartharxiv.org/repository/view/6937/).
 
