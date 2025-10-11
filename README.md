@@ -6,7 +6,7 @@
 
 Click the badge below to launch:
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/lorenzonava96/SAR-and-DL-for-Landslide-Rapid-Assessment/blob/main/SAR-LRA%20Tool%20V2%20for%20Google%20Colaboratory/SAR_LRA_Tool_V2.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/lorenzonava96/SAR-and-DL-for-Landslide-Rapid-Assessment/blob/main/SAR-LRA%20Tool%20V2/SAR_LRA_Tool_V2.ipynb))
 
 __________________________________________________
 
