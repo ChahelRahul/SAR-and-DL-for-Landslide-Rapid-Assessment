@@ -2,7 +2,7 @@
 
 In this repository, we introduce an all-weather, day-night SAR-based Co-Seismic Landslide Rapid Assessment tool (SAR-LRA). Utilizing Deep Neural Networks, this tool is tailored for landslide detection during earthquake-triggered multiple landslide events. For further details, please consult the preprint "Sentinel-1 SAR-based Globally Distributed Landslide Detection by Deep Neural Networks" by [Nava et al (2026)](https://doi.org/10.5194/gmd-19-167-2026).
 
-### ▶️ Run in Google Colab (Recommended)
+### ▶️ Run in Google Colab
 
 Click the badge below to launch:
 
