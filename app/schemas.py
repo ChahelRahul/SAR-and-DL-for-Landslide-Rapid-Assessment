@@ -16,6 +16,7 @@ class RasterInferenceRequest:
     orbit: Orbit
     weights_path: Path
     input_raster: Path
+    roi_geojson: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,6 +49,7 @@ class PipelineResult:
     model_version: str = MODEL_VERSION
     effective_configuration: dict[str, Any] = field(default_factory=dict)
     input_metadata: dict[str, Any] = field(default_factory=dict)
+    processing_metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)

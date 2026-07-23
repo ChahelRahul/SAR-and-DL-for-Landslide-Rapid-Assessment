@@ -48,6 +48,7 @@ def build_parser() -> argparse.ArgumentParser:
     orbit_group = raster_parser.add_mutually_exclusive_group(required=True)
     orbit_group.add_argument("--ascending", type=Path)
     orbit_group.add_argument("--descending", type=Path)
+    raster_parser.add_argument("--roi", type=Path, help="Optional GeoJSON ROI for coverage validation")
     return parser
 
 
@@ -100,6 +101,7 @@ def main(argv: list[str] | None = None) -> int:
                     orbit=config.model.orbit,
                     weights_path=args.weights,
                     input_raster=input_raster,
+                    roi_geojson=_read_roi(args.roi) if args.roi else None,
                 ),
                 config,
             )

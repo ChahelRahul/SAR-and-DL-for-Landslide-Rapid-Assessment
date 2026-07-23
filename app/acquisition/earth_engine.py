@@ -6,7 +6,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
-from app.config import EXPECTED_BAND_ORDER, ImageryConfig, Orbit
+from app.config import AppConfig, EXPECTED_BAND_ORDER, ImageryConfig, Orbit
 from app.acquisition.local_raster import RasterInput, read_sentinel1_stack
 
 
@@ -30,8 +30,8 @@ def build_composite_image(
     event_date: date,
     config: ImageryConfig,
 ) -> Any:
-    pre_start = event_date - timedelta(days=config.pre_days)
-    post_end = event_date + timedelta(days=config.post_days)
+    pre_start = event_date - timedelta(days=config.imagery.pre_days)
+    post_end = event_date + timedelta(days=config.imagery.post_days)
     base = (
         ee.ImageCollection("COPERNICUS/S1_GRD")
         .filterBounds(geometry)
@@ -68,7 +68,7 @@ def acquire_intermediate_raster(
     roi_geojson: dict[str, Any],
     event_date: date,
     orbit: Orbit,
-    config: ImageryConfig,
+    config: AppConfig,
     cache_dir: Path,
     project: str | None = None,
     authenticate: bool = False,
@@ -78,11 +78,11 @@ def acquire_intermediate_raster(
     Earth Engine and geemap are imported only when a cache miss requires an
     export. The returned boolean is true when an existing cache entry was used.
     """
-    key = _cache_key(roi_geojson, event_date, orbit, config)
+    key = _cache_key(roi_geojson, event_date, orbit, config.imagery)
     cache_dir.mkdir(parents=True, exist_ok=True)
     target = cache_dir / f"sentinel1-{orbit.lower()}-{event_date.isoformat()}-{key}.tif"
     if target.is_file():
-        return read_sentinel1_stack(target, require_contract_tags=True), True
+        return read_sentinel1_stack(target, config=config, roi_geojson=roi_geojson, require_contract_tags=True), True
 
     ee = initialize(project, authenticate=authenticate)
     try:
@@ -94,7 +94,7 @@ def acquire_intermediate_raster(
     collection = (
         ee.ImageCollection("COPERNICUS/S1_GRD")
         .filterBounds(geometry)
-        .filterDate(str(event_date - timedelta(days=config.pre_days)), str(event_date + timedelta(days=config.post_days)))
+        .filterDate(str(event_date - timedelta(days=config.imagery.pre_days)), str(event_date + timedelta(days=config.imagery.post_days)))
         .filter(ee.Filter.eq("orbitProperties_pass", orbit))
     )
     relative_orbits = collection.aggregate_array("relativeOrbitNumber_start").distinct().getInfo() or []
@@ -103,17 +103,17 @@ def acquire_intermediate_raster(
     relative_orbit = int(sorted(relative_orbits)[0])
     image = build_composite_image(
         ee, geometry, orbit=orbit, relative_orbit=relative_orbit,
-        event_date=event_date, config=config,
+        event_date=event_date, config=config.imagery,
     )
     geemap.ee_export_image(
         image,
         filename=str(target),
-        scale=config.scale_m,
+        scale=config.imagery.scale_m,
         region=geometry,
         file_per_band=False,
     )
-    _write_contract_metadata(target, key, orbit, relative_orbit, event_date, config)
-    return read_sentinel1_stack(target, require_contract_tags=True), False
+    _write_contract_metadata(target, key, orbit, relative_orbit, event_date, config.imagery)
+    return read_sentinel1_stack(target, config=config, roi_geojson=roi_geojson, require_contract_tags=True), False
 
 
 def _write_contract_metadata(

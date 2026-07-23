@@ -19,7 +19,7 @@ def filters_for_orbit(orbit: str) -> int:
 def run_raster(request: RasterInferenceRequest, config: AppConfig) -> PipelineResult:
     if request.orbit != config.model.orbit:
         raise ValueError("request orbit must match effective configuration orbit")
-    raster = read_sentinel1_stack(request.input_raster)
+    raster = read_sentinel1_stack(request.input_raster, config=config, roi_geojson=request.roi_geojson)
     return _run_inference(
         request_id=request.request_id,
         weights_path=request.weights_path,
@@ -40,7 +40,7 @@ def run_earth_engine(request: EarthEngineRequest, config: AppConfig) -> Pipeline
         roi_geojson=request.roi_geojson,
         event_date=request.event_date,
         orbit=request.orbit,
-        config=config.imagery,
+        config=config,
         cache_dir=request.cache_dir,
         project=request.project,
         authenticate=request.authenticate,
@@ -107,6 +107,7 @@ def _run_inference(
         artifacts=artifacts,
         effective_configuration=effective_config,
         input_metadata=raster.metadata,
+        processing_metadata={"raster_validation": raster.metadata.get("validation", {})},
     )
     output_dir.mkdir(parents=True, exist_ok=True)
     metadata_path = output_dir / "result.json"

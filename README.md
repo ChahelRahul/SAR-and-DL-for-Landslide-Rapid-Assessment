@@ -121,3 +121,7 @@ sar-lra predict-raster --ascending ascending-4band.tif \
 
 See [`docs/issue-5-acquisition-inference.md`](docs/issue-5-acquisition-inference.md)
 for the intermediate-raster contract, cache behavior and common result schema.
+
+## Intermediate raster validation
+
+All prepared and Earth Engine rasters are validated before model loading. See `docs/issue-6-raster-validation.md`. Prepared-raster inference can optionally validate spatial coverage with `--roi roi.geojson`.

@@ -14,5 +14,9 @@ processing:
   tile_size: 64
   overlap: 0.5
   max_roi_km2: 10000
+  resolution_tolerance: 0.2
+  max_nodata_fraction: 0.25
+  value_min_db: -60.0
+  value_max_db: 30.0
 
 output_dir: outputs

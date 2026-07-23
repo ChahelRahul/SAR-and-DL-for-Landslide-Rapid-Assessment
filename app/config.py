@@ -52,6 +52,10 @@ class ProcessingConfig:
     tile_size: int = 64
     overlap: float = 0.5
     max_roi_km2: float = 10_000.0
+    resolution_tolerance: float = 0.2
+    max_nodata_fraction: float = 0.25
+    value_min_db: float = -60.0
+    value_max_db: float = 30.0
 
     def __post_init__(self) -> None:
         if self.tile_size <= 0:
@@ -60,6 +64,12 @@ class ProcessingConfig:
             raise ValueError("processing.overlap must be at least 0 and less than 1")
         if self.max_roi_km2 <= 0:
             raise ValueError("processing.max_roi_km2 must be positive")
+        if not 0 <= self.resolution_tolerance <= 1:
+            raise ValueError("processing.resolution_tolerance must be between 0 and 1")
+        if not 0 <= self.max_nodata_fraction < 1:
+            raise ValueError("processing.max_nodata_fraction must be at least 0 and less than 1")
+        if self.value_min_db >= self.value_max_db:
+            raise ValueError("processing.value_min_db must be less than value_max_db")
         if self.window_step <= 0:
             raise ValueError("processing.overlap leaves no positive window step")
 
@@ -94,7 +104,7 @@ class AppConfig:
         processing_raw = _mapping(raw.get("processing"), "processing")
         _reject_unknown(model_raw, {"version", "orbit", "probability_threshold", "nms_overlap", "batch_size"}, "model")
         _reject_unknown(imagery_raw, {"pre_days", "post_days", "scale_m"}, "imagery")
-        _reject_unknown(processing_raw, {"tile_size", "overlap", "max_roi_km2"}, "processing")
+        _reject_unknown(processing_raw, {"tile_size", "overlap", "max_roi_km2", "resolution_tolerance", "max_nodata_fraction", "value_min_db", "value_max_db"}, "processing")
         return cls(
             model=ModelConfig(**model_raw),
             imagery=ImageryConfig(**imagery_raw),
@@ -109,7 +119,7 @@ class AppConfig:
         output_dir = self.output_dir
         model_fields = {"version", "orbit", "probability_threshold", "nms_overlap", "batch_size"}
         imagery_fields = {"pre_days", "post_days", "scale_m"}
-        processing_fields = {"tile_size", "overlap", "max_roi_km2"}
+        processing_fields = {"tile_size", "overlap", "max_roi_km2", "resolution_tolerance", "max_nodata_fraction", "value_min_db", "value_max_db"}
         for key, value in overrides.items():
             if value is None:
                 continue
