@@ -1,18 +1,80 @@
-# SAR-based Landslide Rapid Detection (SAR-LRA) Tool
+# SAR-based Landslide Rapid Assessment (SAR-LRA)
 
-In this repository, we introduce an all-weather, day-night SAR-based Co-Seismic Landslide Rapid Assessment tool (SAR-LRA). Utilizing Deep Neural Networks, this tool is tailored for landslide detection during earthquake-triggered multiple landslide events. For further details, please consult the paper "Sentinel-1 SAR-based Globally Distributed Landslide Detection by Deep Neural Networks" by [Nava et al (2026)](https://doi.org/10.5194/gmd-19-167-2026).
+SAR-LRA is a beta research tool for rapid screening of earthquake-triggered multiple-landslide events using Sentinel-1 SAR imagery and orbit-specific deep neural networks.
 
-### ▶️ Run in Google Colab
+> Results are not authoritative landslide inventories. Every output requires review by a qualified remote-sensing or landslide specialist.
 
-Click the badge below to launch:
+## Current status
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/lorenzonava96/SAR-and-DL-for-Landslide-Rapid-Assessment/blob/main/SAR-LRA%20Tool%20V2/SAR_LRA_Tool_V2.ipynb)
+The repository is being converted from a notebook-led research workflow into a reproducible command-line and container service. The scientific V2 notebook remains the current reference implementation while operational modules are extracted into `src/sar_lra`.
 
-The repository provides files enabling the deployment of DNNs trained on Sentinel-1 Ascending and Descending orbits separately within a specified area. The code utilizes Google Earth Engine to acquire and process satellite imagery and deploys the Deep Neural Networks on your local machine.
+Read these documents before implementation or use:
 
-Please note that this tool is currently in its beta version and will undergo continuous improvement as new inventories become available. Additionally, we aim to expand its functionality to include rainfall-induced multiple landslide events in the future.
+- [`MODEL_CARD.md`](MODEL_CARD.md) — intended use, training coverage, input bands, limitations, and licensing status;
+- [`docs/container-contract.md`](docs/container-contract.md) — planned request and result contract;
+- [`docs/repository-layout.md`](docs/repository-layout.md) — ownership of each directory;
+- [`model/weights-manifest.json`](model/weights-manifest.json) — weight URLs, architectures, and checksums.
 
-Contact emails: lorenava996@gmail.com
+## Reference notebook
 
-***SAR-LRA Tool***
-![SAR-LRA Tool](https://github.com/lorenzonava96/SAR-and-DL-for-Landslide-Rapid-Assessment/blob/main/object%20detection.png)
+[![Open V2 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/lorenzonava96/SAR-and-DL-for-Landslide-Rapid-Assessment/blob/main/notebooks/v2/SAR_LRA_Tool_V2.ipynb)
+
+The notebook acquires Sentinel-1 imagery through Google Earth Engine, creates pre/post composites, and runs separate ascending and descending models.
+
+## Required model input
+
+Each inference raster is a `64 × 64 × 4` patch stack with bands in this exact order:
+
+1. `postVV`
+2. `postVH`
+3. `diffVV = postVV - preVV`
+4. `diffVH = postVH - preVH`
+
+See the model card for units, temporal windows, orbit constraints, and known failure modes.
+
+## Repository structure
+
+```text
+assets/              documentation images
+docs/                contracts and architecture notes
+examples/requests/   sample requests
+model/weights/       canonical released weights
+notebooks/legacy/    retained V1 research workflows
+notebooks/v2/        current scientific reference workflow
+schemas/             JSON schemas
+scripts/             verification utilities
+src/sar_lra/         future operational Python package
+tests/               unit and integration tests
+```
+
+## Verify model weights
+
+```bash
+python scripts/verify_model_weights.py
+```
+
+The released checksums are stored in `model/weights-manifest.json`.
+
+## Development
+
+```bash
+python -m pip install -e .
+python -m compileall src
+python -m pytest
+```
+
+The package is currently a scaffold. Scientific functions will be extracted from the V2 notebook in the next implementation issue.
+
+## Citation
+
+Nava, L. et al. (2026), “Sentinel-1 SAR-based Globally Distributed Landslide Detection by Deep Neural Networks,” *Geoscientific Model Development*. DOI: [10.5194/gmd-19-167-2026](https://doi.org/10.5194/gmd-19-167-2026).
+
+## Licence
+
+Repository code is distributed under the MIT License. The trained-weight licensing statement remains subject to explicit rights-holder confirmation as documented in `MODEL_CARD.md`.
+
+## Contact
+
+lorenava996@gmail.com
+
+![SAR-LRA output example](assets/object-detection.png)

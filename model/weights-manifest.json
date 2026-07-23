@@ -10,9 +10,8 @@
     {
       "orbit": "DESCENDING",
       "filename": "VV_VH_60_nn_noSlope_DESCENDING_60_12_5_size_64_filters_64_batch_size_512_lr_0.001_dropout_0.7_fil1_3_fil2_3_fil3_3.hdf5",
-      "source_url": "https://raw.githubusercontent.com/lorenzonava96/SAR-and-DL-for-Landslide-Rapid-Assessment/main/SAR-LRA%20Tool%20V1/model_weights/VV_VH_60_nn_noSlope_DESCENDING_60_12_5_size_64_filters_64_batch_size_512_lr_0.001_dropout_0.7_fil1_3_fil2_3_fil3_3.hdf5",
-      "git_blob_sha1": "85fb0ce13cf17d2d029d742d593095cce99e1379",
-      "sha256": "TO_BE_VERIFIED",
+      "source_url": "https://raw.githubusercontent.com/lorenzonava96/SAR-and-DL-for-Landslide-Rapid-Assessment/main/model/weights/VV_VH_60_nn_noSlope_DESCENDING_60_12_5_size_64_filters_64_batch_size_512_lr_0.001_dropout_0.7_fil1_3_fil2_3_fil3_3.hdf5",
+      "sha256": "2083bfa5ec756d3cc22d8802224fff0f46a5e40b79318e93fa742f044667dcfd",
       "input_shape": [
         64,
         64,
@@ -26,14 +25,14 @@
         "diffVH"
       ],
       "pre_days": 60,
-      "post_days": 12
+      "post_days": 12,
+      "size_bytes": 25516560
     },
     {
       "orbit": "ASCENDING",
       "filename": "VV_VH_60_nn_noSlope_ASCENDING_60_12_6_size_64_filters_32_batch_size_512_lr_0.001_dropout_0.7_fil1_3_fil2_3_fil3_3.hdf5",
-      "source_url": "https://raw.githubusercontent.com/lorenzonava96/SAR-and-DL-for-Landslide-Rapid-Assessment/main/SAR-LRA%20Tool%20V1/model_weights/VV_VH_60_nn_noSlope_ASCENDING_60_12_6_size_64_filters_32_batch_size_512_lr_0.001_dropout_0.7_fil1_3_fil2_3_fil3_3.hdf5",
-      "git_blob_sha1": "TO_BE_FETCHED",
-      "sha256": "TO_BE_VERIFIED",
+      "source_url": "https://raw.githubusercontent.com/lorenzonava96/SAR-and-DL-for-Landslide-Rapid-Assessment/main/model/weights/VV_VH_60_nn_noSlope_ASCENDING_60_12_6_size_64_filters_32_batch_size_512_lr_0.001_dropout_0.7_fil1_3_fil2_3_fil3_3.hdf5",
+      "sha256": "ba0599c713a69eb477b3ff540d008246b5b758a8bb9b14e3fc4d97f24f0ff21c",
       "input_shape": [
         64,
         64,
@@ -47,7 +46,8 @@
         "diffVH"
       ],
       "pre_days": 60,
-      "post_days": 12
+      "post_days": 12,
+      "size_bytes": 6412304
     }
   ]
 }

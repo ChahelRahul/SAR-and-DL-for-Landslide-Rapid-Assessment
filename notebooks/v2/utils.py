@@ -97,6 +97,18 @@ from rasterio.features import shapes as rio_shapes
 import geopandas as gpd
 from shapely.geometry import shape
 import re
+import hashlib
+
+MODEL_NAME = "SAR-LRA"
+MODEL_VERSION = "sar-lra-v2.0.0-beta.1"
+EXPECTED_BAND_ORDER = ("postVV", "postVH", "diffVV", "diffVH")
+
+def _sha256(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 # === Core runner ===============================================================
 
@@ -152,6 +164,7 @@ def run_lra_inference_per_rel(
 
     print("[INFO] loading model weights...")
     model.load_weights(weights_path)
+    weights_sha256 = _sha256(weights_path)
     print("[INFO] model ready.")
 
     # Base directory structure: e.g. deploy/VV_VH/60_12/DESCENDING/REL_###
@@ -252,6 +265,14 @@ def run_lra_inference_per_rel(
         )
         with rasterio.open(pred_path, "w", **profile_out) as dst:
             dst.write(mask.astype(np.float32), 1)
+            dst.update_tags(
+                model_name=MODEL_NAME,
+                model_version=MODEL_VERSION,
+                orbit=orbit,
+                relative_orbit=str(rel),
+                weights_sha256=weights_sha256,
+                input_band_order=",".join(EXPECTED_BAND_ORDER),
+            )
         print(f"[INFO] wrote raster mask: {pred_path}")
 
         # --- Vectorize and save shapefile ---
@@ -263,6 +284,11 @@ def run_lra_inference_per_rel(
         if len(geoms) == 0:
             print("[INFO] no polygons to write for this REL.")
         gdf = gpd.GeoDataFrame(geometry=geoms, crs=crs)
+        if len(gdf) > 0:
+            gdf["model_ver"] = MODEL_VERSION
+            gdf["orbit"] = orbit
+            gdf["rel_orbit"] = rel
+            gdf["weights_sha256"] = weights_sha256
         shp_path = pred_path + ".shp"
         if len(gdf) > 0:
             gdf.to_file(shp_path)
