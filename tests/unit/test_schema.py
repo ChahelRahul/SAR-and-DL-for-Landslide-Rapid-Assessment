@@ -1,8 +1,13 @@
-from datetime import date
 from pathlib import Path
-import pytest
-from app.schemas import PipelineRequest
 
-def test_request_requires_one_input():
-    with pytest.raises(ValueError):
-        PipelineRequest('x','ASCENDING',date(2025,1,1),date(2025,1,1),Path('w'))
+from app.schemas import RasterInferenceRequest
+
+
+def test_raster_request_is_explicit() -> None:
+    request = RasterInferenceRequest(
+        request_id="x",
+        orbit="ASCENDING",
+        weights_path=Path("weights.h5"),
+        input_raster=Path("input.tif"),
+    )
+    assert request.orbit == "ASCENDING"

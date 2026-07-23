@@ -102,3 +102,22 @@ sar-lra --config config/default.yaml --help
 ```
 
 Configuration validation occurs before model or raster processing. The effective configuration is written to result metadata and geospatial output metadata. Scientific rationale and validation rules are documented in [`docs/configuration.md`](docs/configuration.md).
+
+## Operational modes
+
+Earth Engine acquisition and inference:
+
+```bash
+sar-lra predict --roi roi.geojson --event-date 2024-04-03 \
+  --source earth-engine --orbit ASCENDING --weights model.hdf5
+```
+
+Prepared raster inference, with no Earth Engine dependency:
+
+```bash
+sar-lra predict-raster --ascending ascending-4band.tif \
+  --weights model.hdf5 --output-dir results
+```
+
+See [`docs/issue-5-acquisition-inference.md`](docs/issue-5-acquisition-inference.md)
+for the intermediate-raster contract, cache behavior and common result schema.

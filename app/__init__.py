@@ -1,13 +1,18 @@
-"""SAR-LRA reusable application package.
+"""SAR-LRA package.
 
-Importing :mod:`app` performs no network access, Earth Engine authentication,
-or model-weight downloads. Expensive optional dependencies are imported only
-inside the functions that require them.
+Importing this package performs no Earth Engine authentication, network access,
+or model-weight loading.
 """
-from .config import AppConfig, MODEL_NAME, MODEL_VERSION, load_config
-from .schemas import PipelineRequest, PipelineResult
+
+from .config import AppConfig, ImageryConfig, ModelConfig, ProcessingConfig
+from .schemas import EarthEngineRequest, PipelineResult, RasterInferenceRequest
 
 __all__ = [
-    "AppConfig", "MODEL_NAME", "MODEL_VERSION", "load_config",
-    "PipelineRequest", "PipelineResult",
+    "AppConfig",
+    "ImageryConfig",
+    "ModelConfig",
+    "ProcessingConfig",
+    "EarthEngineRequest",
+    "RasterInferenceRequest",
+    "PipelineResult",
 ]
