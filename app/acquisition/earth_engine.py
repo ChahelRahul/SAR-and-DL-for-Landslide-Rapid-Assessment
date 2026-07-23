@@ -4,7 +4,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Iterable
 
-from app.config import AcquisitionConfig, EXPECTED_BAND_ORDER, Orbit
+from app.config import EXPECTED_BAND_ORDER, ImageryConfig, Orbit
 
 @dataclass(frozen=True, slots=True)
 class CompositeArtifact:
@@ -38,7 +38,7 @@ def build_composite_image(
     relative_orbit: int,
     pre_end: date,
     post_start: date,
-    config: AcquisitionConfig = AcquisitionConfig(),
+    config: ImageryConfig,
 ) -> Any:
     """Build the documented four-band Sentinel-1 median/change image."""
     pre_start = pre_end - timedelta(days=config.pre_days)
@@ -63,7 +63,7 @@ def build_composite_image(
 
 def available_relative_orbits(
     ee: Any, geometry: Any, *, orbit: Orbit, pre_end: date, post_start: date,
-    config: AcquisitionConfig = AcquisitionConfig(),
+    config: ImageryConfig,
 ) -> list[int]:
     pre_start = pre_end - timedelta(days=config.pre_days)
     post_end = post_start + timedelta(days=config.post_days)

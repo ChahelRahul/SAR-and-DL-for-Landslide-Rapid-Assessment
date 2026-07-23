@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10,<3.14"
 license = {file = "LICENSE"}
 authors = [{name = "SAR-LRA contributors"}]
-dependencies = ["numpy>=1.24,<3"]
+dependencies = ["numpy>=1.24,<3", "PyYAML>=6,<7"]
 classifiers = ["Development Status :: 4 - Beta", "Programming Language :: Python :: 3", "License :: OSI Approved :: MIT License"]
 
 [project.optional-dependencies]

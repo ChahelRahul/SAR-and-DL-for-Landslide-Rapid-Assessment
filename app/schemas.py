@@ -36,6 +36,7 @@ class PipelineResult:
     artifacts: list[OutputArtifact] = field(default_factory=list)
     model_name: str = MODEL_NAME
     model_version: str = MODEL_VERSION
+    effective_configuration: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)

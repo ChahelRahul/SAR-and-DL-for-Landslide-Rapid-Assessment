@@ -6,7 +6,7 @@ SAR-LRA is a beta research tool for rapid screening of earthquake-triggered mult
 
 ## Current status
 
-The repository is being converted from a notebook-led research workflow into a reproducible command-line and container service. The scientific V2 notebook remains the current reference implementation while operational modules are extracted into `src/sar_lra`.
+The repository is being converted from a notebook-led research workflow into a reproducible command-line and container service. The scientific V2 notebook remains the current reference implementation while operational modules are extracted into the installable `app/` package.
 
 Read these documents before implementation or use:
 
@@ -43,7 +43,8 @@ notebooks/legacy/    retained V1 research workflows
 notebooks/v2/        current scientific reference workflow
 schemas/             JSON schemas
 scripts/             verification utilities
-src/sar_lra/         future operational Python package
+app/                operational Python package
+config/             validated YAML configuration
 tests/               unit and integration tests
 ```
 
@@ -59,11 +60,11 @@ The released checksums are stored in `model/weights-manifest.json`.
 
 ```bash
 python -m pip install -e .
-python -m compileall src
+python -m compileall app
 python -m pytest
 ```
 
-The package is currently a scaffold. Scientific functions will be extracted from the V2 notebook in the next implementation issue.
+Reusable scientific functions are implemented under `app/`; notebooks are thin examples.
 
 ## Citation
 
@@ -91,3 +92,13 @@ pip install '.[geo,inference,earth-engine]'
 ```
 
 Run local-raster inference with `sar-lra --help`. Earth Engine initialization is explicit through `app.acquisition.earth_engine.initialize(...)`.
+
+## Validated configuration
+
+Use the documented defaults in [`config/default.yaml`](config/default.yaml), or override individual values through CLI options.
+
+```bash
+sar-lra --config config/default.yaml --help
+```
+
+Configuration validation occurs before model or raster processing. The effective configuration is written to result metadata and geospatial output metadata. Scientific rationale and validation rules are documented in [`docs/configuration.md`](docs/configuration.md).

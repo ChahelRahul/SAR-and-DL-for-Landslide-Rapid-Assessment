@@ -2,7 +2,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 from typing import Any
-from app.config import ModelConfig
+from app.config import ModelLoadConfig
 
 
 def sha256_file(path: str | Path) -> str:
@@ -25,7 +25,7 @@ def focal_loss(alpha: float = 0.25, gamma: float = 2.0):
     return loss
 
 
-def build_model(config: ModelConfig) -> Any:
+def build_model(config: ModelLoadConfig) -> Any:
     """Construct the orbit-specific CNN. Does not load or download weights."""
     try:
         from tensorflow.keras import Model, Input
@@ -52,7 +52,7 @@ def build_model(config: ModelConfig) -> Any:
     return model
 
 
-def load_model(config: ModelConfig) -> tuple[Any, str]:
+def load_model(config: ModelLoadConfig) -> tuple[Any, str]:
     """Build and load a local weight file. Network downloads are intentionally excluded."""
     if not config.weights_path.is_file():
         raise FileNotFoundError(f"Model weights not found: {config.weights_path}")

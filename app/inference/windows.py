@@ -8,7 +8,7 @@ class Window:
     x0: int; y0: int; x1: int; y1: int
 
 
-def sliding_windows(image: np.ndarray, size: int = 64, step: int = 32) -> Iterator[tuple[Window, np.ndarray]]:
+def sliding_windows(image: np.ndarray, size: int, step: int) -> Iterator[tuple[Window, np.ndarray]]:
     if size <= 0 or step <= 0:
         raise ValueError("size and step must be positive")
     height, width = image.shape[:2]
