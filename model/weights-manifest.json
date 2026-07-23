@@ -1,0 +1,53 @@
+{
+  "model_name": "SAR-LRA",
+  "model_version": "sar-lra-v2.0.0-beta.1",
+  "license": {
+    "repository_code": "MIT",
+    "weights": "UNCONFIRMED",
+    "required_confirmation": "Maintainer/rightsholder must explicitly confirm that listed weight files are distributed under MIT."
+  },
+  "weights": [
+    {
+      "orbit": "DESCENDING",
+      "filename": "VV_VH_60_nn_noSlope_DESCENDING_60_12_5_size_64_filters_64_batch_size_512_lr_0.001_dropout_0.7_fil1_3_fil2_3_fil3_3.hdf5",
+      "source_url": "https://raw.githubusercontent.com/lorenzonava96/SAR-and-DL-for-Landslide-Rapid-Assessment/main/SAR-LRA%20Tool%20V1/model_weights/VV_VH_60_nn_noSlope_DESCENDING_60_12_5_size_64_filters_64_batch_size_512_lr_0.001_dropout_0.7_fil1_3_fil2_3_fil3_3.hdf5",
+      "git_blob_sha1": "85fb0ce13cf17d2d029d742d593095cce99e1379",
+      "sha256": "TO_BE_VERIFIED",
+      "input_shape": [
+        64,
+        64,
+        4
+      ],
+      "filters_first_layer": 64,
+      "band_order": [
+        "postVV",
+        "postVH",
+        "diffVV",
+        "diffVH"
+      ],
+      "pre_days": 60,
+      "post_days": 12
+    },
+    {
+      "orbit": "ASCENDING",
+      "filename": "VV_VH_60_nn_noSlope_ASCENDING_60_12_6_size_64_filters_32_batch_size_512_lr_0.001_dropout_0.7_fil1_3_fil2_3_fil3_3.hdf5",
+      "source_url": "https://raw.githubusercontent.com/lorenzonava96/SAR-and-DL-for-Landslide-Rapid-Assessment/main/SAR-LRA%20Tool%20V1/model_weights/VV_VH_60_nn_noSlope_ASCENDING_60_12_6_size_64_filters_32_batch_size_512_lr_0.001_dropout_0.7_fil1_3_fil2_3_fil3_3.hdf5",
+      "git_blob_sha1": "TO_BE_FETCHED",
+      "sha256": "TO_BE_VERIFIED",
+      "input_shape": [
+        64,
+        64,
+        4
+      ],
+      "filters_first_layer": 32,
+      "band_order": [
+        "postVV",
+        "postVH",
+        "diffVV",
+        "diffVH"
+      ],
+      "pre_days": 60,
+      "post_days": 12
+    }
+  ]
+}

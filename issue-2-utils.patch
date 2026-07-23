@@ -1,0 +1,40 @@
+diff --git a/SAR-LRA Tool V2/utils.py b/SAR-LRA Tool V2/utils.py
+--- a/SAR-LRA Tool V2/utils.py
++++ b/SAR-LRA Tool V2/utils.py
+@@
+ import re
++import hashlib
++
++MODEL_NAME = "SAR-LRA"
++MODEL_VERSION = "sar-lra-v2.0.0-beta.1"
++EXPECTED_BAND_ORDER = ("postVV", "postVH", "diffVV", "diffVH")
++
++def _sha256(path):
++    digest = hashlib.sha256()
++    with open(path, "rb") as stream:
++        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
++            digest.update(chunk)
++    return digest.hexdigest()
+@@
+     print("[INFO] loading model weights...")
+     model.load_weights(weights_path)
++    weights_sha256 = _sha256(weights_path)
+     print("[INFO] model ready.")
+@@
+         with rasterio.open(pred_path, "w", **profile_out) as dst:
+             dst.write(mask.astype(np.float32), 1)
++            dst.update_tags(
++                model_name=MODEL_NAME,
++                model_version=MODEL_VERSION,
++                orbit=orbit,
++                relative_orbit=str(rel),
++                weights_sha256=weights_sha256,
++                input_band_order=",".join(EXPECTED_BAND_ORDER),
++            )
+@@
+         gdf = gpd.GeoDataFrame(geometry=geoms, crs=crs)
++        if len(gdf) > 0:
++            gdf["model_ver"] = MODEL_VERSION
++            gdf["orbit"] = orbit
++            gdf["rel_orbit"] = rel
++            gdf["weights_sha256"] = weights_sha256
