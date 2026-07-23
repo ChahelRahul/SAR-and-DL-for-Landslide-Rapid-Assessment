@@ -78,3 +78,16 @@ Repository code is distributed under the MIT License. The trained-weight licensi
 lorenava996@gmail.com
 
 ![SAR-LRA output example](assets/object-detection.png)
+
+
+## Package architecture
+
+Reusable code is under `app/`; notebooks are examples only. Installing the base package performs no Earth Engine authentication and does not download model weights.
+
+```bash
+pip install .
+# or install operational dependencies
+pip install '.[geo,inference,earth-engine]'
+```
+
+Run local-raster inference with `sar-lra --help`. Earth Engine initialization is explicit through `app.acquisition.earth_engine.initialize(...)`.

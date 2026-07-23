@@ -37,3 +37,9 @@ cache/
 Thumbs.db
 .vscode/
 .idea/
+
+.venv/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
