@@ -125,3 +125,7 @@ for the intermediate-raster contract, cache behavior and common result schema.
 ## Intermediate raster validation
 
 All prepared and Earth Engine rasters are validated before model loading. See `docs/issue-6-raster-validation.md`. Prepared-raster inference can optionally validate spatial coverage with `--roi roi.geojson`.
+
+## Model loss compatibility
+
+The released V2 weights are used for inference with an uncompiled model. The archived reference implementation used a sigmoid output together with `binary_crossentropy(..., from_logits=True)` inside its focal loss. Issue 7 preserves that historical loss as `released_focal_loss()` and exposes a separate `probability_focal_loss()` for controlled experiments; inference outputs do not depend on either compile-time loss. See [`docs/issue-7-focal-loss-consistency.md`](docs/issue-7-focal-loss-consistency.md).

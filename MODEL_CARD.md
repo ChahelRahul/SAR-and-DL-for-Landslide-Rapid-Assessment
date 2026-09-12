@@ -206,3 +206,8 @@ to download each file and verify or populate its SHA-256 checksum before release
 ## Citation
 
 Nava, L., Mondini, A., Bhuyan, K., Fang, C., Monserrat, O., Novellino, A., and Catani, F. (2026). Sentinel-1 SAR-based globally distributed co-seismic landslide detection by deep neural networks. *Geoscientific Model Development*, 19, 167–185. https://doi.org/10.5194/gmd-19-167-2026.
+
+
+## Loss semantics and compatibility
+
+The archived released implementation defines a sigmoid model output and a focal loss whose binary cross-entropy call uses `from_logits=True`. The package preserves this historical objective as `released_focal_loss()` for reproducibility but does not compile the network during released-weight inference. Therefore the focal-loss choice does not alter forward predictions from the distributed weights. A separate probability-space objective is available only for explicit retraining experiments. Exact historical training-environment versions are not recoverable from the repository; see `docs/issue-7-focal-loss-consistency.md`.
