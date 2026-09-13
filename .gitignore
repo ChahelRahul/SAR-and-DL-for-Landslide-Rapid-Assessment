@@ -18,6 +18,10 @@ work/
 cache/
 *.tif
 *.tiff
+
+# Deterministic project-authored fixtures required by CI and the container quickstart
+!tests/fixtures/reference/*.tif
+!examples/quickstart/ascending-4band.tif
 *.shp
 *.shx
 *.dbf

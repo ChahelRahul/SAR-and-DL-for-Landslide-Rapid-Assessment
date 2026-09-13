@@ -8,7 +8,7 @@ geopandas==1.0.1
 shapely==2.0.7
 pyproj==3.7.0
 tensorflow-cpu==2.18.0
-earthengine-api==1.6.5
+earthengine-api==1.6.6
 geemap==0.36.1
 leafmap==0.52.1
 fastapi==0.128.2

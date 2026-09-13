@@ -12,6 +12,8 @@
 - [ ] `app.__version__` is `2.0.0`.
 - [ ] Model identifier remains `sar-lra-v2.0.0-beta.1` unless retrained/reissued weights are deliberately introduced.
 - [ ] Full unit/regression suite passes.
+- [ ] Required tracked TIFF fixtures are present after a clean Git checkout.
+- [ ] CPU/GPU direct dependency locks resolve on Python 3.11.
 - [ ] CPU container workflow passes.
 - [ ] GPU image build/static workflow passes.
 - [ ] Optional real-GPU runner test passes if available.
