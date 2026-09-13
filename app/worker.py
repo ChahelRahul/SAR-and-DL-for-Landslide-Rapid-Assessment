@@ -13,6 +13,7 @@ from typing import Any, Iterator
 
 from app.api import ApiSettings, _config, _weights
 from app.jobs import JobBackend, JobState, RedisJobBackend, utc_now
+from app.object_store import ObjectStoreSettings, mirror_job_output
 from app.schemas import EarthEngineRequest, RasterInferenceRequest
 
 
@@ -169,8 +170,16 @@ def execute_job(job_id: str, backend: JobBackend, settings: ApiSettings) -> dict
         if latest is None or latest.state == JobState.CANCELLED:
             _cleanup_job_output(settings, job_id)
             return None
+        result_dict = result.to_dict()
+        object_store = mirror_job_output(
+            job_id,
+            _job_output_dir(settings, job_id),
+            ObjectStoreSettings.from_env(),
+        )
+        if object_store is not None:
+            result_dict["object_store"] = object_store
         latest.state = JobState.COMPLETED
-        latest.result = result.to_dict()
+        latest.result = result_dict
         latest.error = None
         latest.finished_at = utc_now()
         latest.heartbeat_at = latest.finished_at

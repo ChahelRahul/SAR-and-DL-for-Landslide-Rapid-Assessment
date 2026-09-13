@@ -100,7 +100,7 @@ Detailed stack traces belong in worker logs, not API responses.
 A reference deployment is included:
 
 ```bash
-docker compose -f docker-compose.async.yml up --build
+docker compose up --build
 ```
 
 It starts Redis, one API process, and one SAR-LRA worker sharing the result volume.

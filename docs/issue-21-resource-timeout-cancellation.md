@@ -48,7 +48,7 @@ Scale async throughput by adding isolated workers only after implementing an ext
 
 ## Container resource limits
 
-`docker-compose.async.yml` provides defaults:
+`docker-compose.yml` provides defaults:
 
 ```text
 API:    1 CPU, 1 GiB memory, 256 PIDs

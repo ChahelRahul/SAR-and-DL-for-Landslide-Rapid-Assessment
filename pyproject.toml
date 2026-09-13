@@ -17,9 +17,9 @@ classifiers = ["Development Status :: 4 - Beta", "Programming Language :: Python
 geo = ["rasterio>=1.3", "geopandas>=0.14", "shapely>=2", "pyproj>=3.5"]
 inference = ["tensorflow>=2.12,<2.19"]
 earth-engine = ["earthengine-api>=1", "geemap>=0.35", "leafmap>=0.35"]
-api = ["fastapi>=0.115,<1", "uvicorn>=0.30,<1", "redis>=5,<7"]
+api = ["fastapi>=0.115,<1", "uvicorn>=0.30,<1", "redis>=5,<7", "boto3>=1.35,<2"]
 dev = ["pytest>=8", "ruff>=0.5", "build>=1.2", "httpx>=0.27,<1"]
-all = ["rasterio>=1.3", "geopandas>=0.14", "shapely>=2", "pyproj>=3.5", "tensorflow>=2.12,<2.19", "earthengine-api>=1", "geemap>=0.35", "leafmap>=0.35", "fastapi>=0.115,<1", "uvicorn>=0.30,<1", "redis>=5,<7"]
+all = ["rasterio>=1.3", "geopandas>=0.14", "shapely>=2", "pyproj>=3.5", "tensorflow>=2.12,<2.19", "earthengine-api>=1", "geemap>=0.35", "leafmap>=0.35", "fastapi>=0.115,<1", "uvicorn>=0.30,<1", "redis>=5,<7", "boto3>=1.35,<2"]
 
 [project.scripts]
 sar-lra = "app.cli:main"

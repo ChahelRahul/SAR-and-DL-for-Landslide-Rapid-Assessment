@@ -234,7 +234,7 @@ An optional FastAPI service wraps the same validated pipeline as the CLI. Instal
 Long-running HTTP work can be queued through Redis instead of keeping a request open:
 
 ```bash
-docker compose -f docker-compose.async.yml up --build
+docker compose up --build
 ```
 
 Submit with `POST /v1/jobs`, poll `GET /v1/jobs/{job_id}`, and fetch the completed result from `GET /v1/jobs/{job_id}/result`. The worker entry point is `sar-lra-worker`. Job metadata retention is controlled by `SAR_LRA_JOB_RETENTION_SECONDS` (default: 86400 seconds). See `docs/issue-20-asynchronous-jobs.md`.
@@ -255,3 +255,24 @@ SAR_LRA_MIN_FREE_DISK_MB=1024
 ## Published container images
 
 Issue 22 adds the GHCR release workflow. On `main`, the CPU image is published as `ghcr.io/<owner>/sar-lra`; semantic release tags such as `v1.0.0` publish both CPU and GPU images with `1.0.0`, `1.0`, `1`, `latest`, and `sha-<commit>` aliases. Each published image is SBOM-generated, Trivy-scanned, and keylessly signed with Cosign. See `docs/issue-22-ghcr-release.md`.
+
+## End-user deployment guide
+
+For a single notebook-free path from container pull to sample prediction, Earth Engine authentication, prepared-raster inference, API/Compose deployment, output interpretation, troubleshooting, scientific limitations, and citation, use [`docs/end-user-deployment.md`](docs/end-user-deployment.md). The image includes a small synthetic smoke-test raster under `/opt/sar-lra/examples/quickstart/`.
+
+## Docker Compose deployment
+
+A complete local/reference stack is available in `docker-compose.yml` with the
+API, worker, Redis, MinIO, health checks, persistent volumes, and an optional
+CLI-only profile. See `docs/issue-23-compose-deployment.md`.
+
+```bash
+cp .env.example .env
+docker compose up --build -d
+```
+
+For CLI-only use, no queue or object store is required:
+
+```bash
+docker compose --profile cli run --rm cli --help
+```
