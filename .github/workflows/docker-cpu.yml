@@ -1,0 +1,26 @@
+name: docker-cpu
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build pinned CPU image
+        run: docker build --platform linux/amd64 --tag sar-lra:cpu .
+      - name: Container smoke test
+        run: docker run --rm --entrypoint /opt/sar-lra/scripts/container_smoke_test.sh sar-lra:cpu
+      - name: Non-root runtime
+        run: |
+          uid=$(docker run --rm --entrypoint id sar-lra:cpu -u)
+          test "$uid" = "10001"
+      - name: CLI validation with mounted input
+        run: |
+          docker run --rm \
+            -v "$PWD/tests/fixtures/reference:/input:ro" \
+            sar-lra:cpu validate-roi \
+            --roi /input/haiti-2021-ascending.roi.geojson

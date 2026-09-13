@@ -14,9 +14,19 @@ processing:
   tile_size: 64
   overlap: 0.5
   max_roi_km2: 10000
+  max_roi_width_km: 500
+  max_roi_height_km: 500
+  max_roi_vertices: 50000
   resolution_tolerance: 0.2
   max_nodata_fraction: 0.25
   value_min_db: -60.0
   value_max_db: 30.0
+  probability_aggregation: maximum
+  write_binary_mask: true
+  vector_format: geojson
+  write_shapefile_zip: false
+  inference_workers: 1
+  nms_diagnostic_limit: 100000
+  output_rows_per_chunk: 1024
 
 output_dir: outputs

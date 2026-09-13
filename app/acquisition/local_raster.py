@@ -26,6 +26,7 @@ class RasterInput:
     transform: Any
     crs: Any
     metadata: dict[str, Any]
+    valid_mask: np.ndarray
 
 
 def read_sentinel1_stack(
@@ -38,7 +39,7 @@ def read_sentinel1_stack(
     """Read, validate, and normalise a four-band Sentinel-1 intermediate raster."""
     try:
         import rasterio
-        from rasterio.features import bounds as geometry_bounds
+        from rasterio.features import bounds as geometry_bounds, rasterize
         from rasterio.warp import transform_geom
     except ImportError as exc:
         raise RuntimeError("Prepared raster inference requires the 'geo' extra") from exc
@@ -68,9 +69,10 @@ def read_sentinel1_stack(
         if src.transform is None or src.transform.is_identity:
             errors.append("geotransform is missing or identity")
         if src.width < config.processing.tile_size or src.height < config.processing.tile_size:
-            errors.append(
-                f"raster is {src.width}x{src.height}; minimum is "
-                f"{config.processing.tile_size}x{config.processing.tile_size} for one model window"
+            warnings.append(
+                f"raster is {src.width}x{src.height}, smaller than the "
+                f"{config.processing.tile_size}x{config.processing.tile_size} model window; "
+                "edge padding will be used and padded pixels will be excluded from outputs"
             )
 
         resolution = (abs(src.transform.a), abs(src.transform.e))
@@ -108,6 +110,18 @@ def read_sentinel1_stack(
                 errors.append(f"ROI intersection check failed: {exc}")
 
         data_ma = src.read(masked=True).astype(np.float32)
+        valid_mask = ~np.ma.getmaskarray(data_ma).any(axis=0)
+        if roi_geojson is not None and src.crs is not None:
+            geometry = roi_geojson.get("geometry", roi_geojson)
+            projected = transform_geom("EPSG:4326", src.crs, geometry, precision=8)
+            roi_mask = rasterize(
+                [(projected, 1)],
+                out_shape=(src.height, src.width),
+                transform=src.transform,
+                fill=0,
+                dtype="uint8",
+            ).astype(bool)
+            valid_mask &= roi_mask
         nodata_pixels = int(np.ma.getmaskarray(data_ma).sum())
         total_values = int(data_ma.size)
         nodata_fraction = nodata_pixels / total_values if total_values else 1.0
@@ -157,6 +171,11 @@ def read_sentinel1_stack(
                 "minimum_window": config.processing.tile_size,
                 "band_ranges_db": band_ranges,
                 "orbit_tag": tags.get("orbit"),
+                "valid_pixel_count": int(valid_mask.sum()),
+                "valid_pixel_fraction": float(valid_mask.mean()) if valid_mask.size else 0.0,
+                "edge_padding_required": bool(
+                    src.width < config.processing.tile_size or src.height < config.processing.tile_size
+                ),
             },
         }
         tagged_orbit = tags.get("orbit")
@@ -176,4 +195,4 @@ def read_sentinel1_stack(
         }
         profile = src.profile.copy()
         profile["nodata"] = src.nodata
-        return RasterInput(path, data, profile, src.transform, src.crs, metadata)
+        return RasterInput(path, data, profile, src.transform, src.crs, metadata, valid_mask)

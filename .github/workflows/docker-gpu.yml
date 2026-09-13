@@ -1,0 +1,35 @@
+name: docker-gpu
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-static-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build pinned GPU-capable image
+        run: docker build --platform linux/amd64 --file Dockerfile.gpu --tag sar-lra:gpu .
+      - name: Static GPU-runtime smoke test
+        run: docker run --rm --entrypoint /opt/sar-lra/scripts/container_gpu_static_smoke_test.sh sar-lra:gpu
+      - name: Non-root runtime
+        run: |
+          uid=$(docker run --rm --entrypoint id sar-lra:gpu -u)
+          test "$uid" = "10001"
+
+  gpu-runtime-smoke-test:
+    if: ${{ vars.SAR_LRA_GPU_CI == 'true' }}
+    runs-on: [self-hosted, linux, x64, gpu]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build GPU image
+        run: docker build --platform linux/amd64 --file Dockerfile.gpu --tag sar-lra:gpu .
+      - name: Verify real GPU inference and CPU/GPU parity
+        run: >-
+          docker run --rm --gpus all
+          --entrypoint python
+          sar-lra:gpu
+          /opt/sar-lra/scripts/container_gpu_smoke_test.py

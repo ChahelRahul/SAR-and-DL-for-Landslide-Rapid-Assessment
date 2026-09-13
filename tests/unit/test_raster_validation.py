@@ -27,10 +27,14 @@ def test_valid_raster_writes_validation_metadata(tmp_path):
     assert result.metadata['validation']['checks']['nodata_fill']=='none'
 
 
-def test_small_raster_is_rejected(tmp_path):
-    path=tmp_path/'small.tif'; write_raster(path, width=32, height=64)
-    with pytest.raises(RasterValidationError, match='minimum is 64x64'):
-        read_sentinel1_stack(path, config=AppConfig())
+def test_small_raster_is_accepted_with_padding_warning(tmp_path):
+    path=tmp_path/'small.tif'; write_raster(path, width=32, height=48)
+    result=read_sentinel1_stack(path, config=AppConfig())
+    validation=result.metadata['validation']
+    assert validation['status']=='passed_with_warnings'
+    assert validation['checks']['edge_padding_required'] is True
+    assert any('edge padding' in warning for warning in validation['warnings'])
+    assert result.valid_mask.shape == (48,32)
 
 
 def test_wrong_orbit_is_rejected(tmp_path):

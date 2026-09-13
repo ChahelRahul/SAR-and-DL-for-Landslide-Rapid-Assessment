@@ -76,7 +76,9 @@ not depend on notebook variables such as `place`.
 Examples:
 
 - `<request_id>_detections.geojson`
-- `<request_id>_detections.gpkg`
+- `detections.geojson` (default, EPSG:4326; valid empty FeatureCollection when no detections)
+- `detections.gpkg` (optional, source raster CRS)
+- `detections-shapefile.zip` (optional compatibility export; never loose sidecars)
 - `<request_id>_detection_mask_ascending.tif`
 - `<request_id>_probability_ascending.tif`
 - `<request_id>_result.json`

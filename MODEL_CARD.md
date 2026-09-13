@@ -211,3 +211,13 @@ Nava, L., Mondini, A., Bhuyan, K., Fang, C., Monserrat, O., Novellino, A., and C
 ## Loss semantics and compatibility
 
 The archived released implementation defines a sigmoid model output and a focal loss whose binary cross-entropy call uses `from_logits=True`. The package preserves this historical objective as `released_focal_loss()` for reproducibility but does not compile the network during released-weight inference. Therefore the focal-loss choice does not alter forward predictions from the distributed weights. A separate probability-space objective is available only for explicit retraining experiments. Exact historical training-environment versions are not recoverable from the repository; see `docs/issue-7-focal-loss-consistency.md`.
+
+## Probability output semantics
+
+The V2 classifier emits one sigmoid score per model window. Operational `probability.tif` output is derived by assigning each valid pixel the maximum score among all windows covering that pixel. It is therefore a window-score aggregation surface, **not** a calibrated per-pixel landslide probability or a validated landslide-boundary segmentation. Binary masks are thresholded derivatives of this surface, and changing the threshold does not require another model forward pass.
+
+## Detection geometry and NMS semantics
+
+The classifier predicts a score for an image window, not a pixel-level landslide boundary. Historical SAR-LRA code used an asymmetric box-overlap suppression rule; this is retained only as a reproducibility diagnostic and is explicitly distinguished from conventional IoU NMS.
+
+Operational vector outputs are produced from the thresholded aggregated probability surface. Their geometries represent **candidate areas**, not exact or validated landslide boundaries. Expert review is required before interpreting them as mapped landslides.

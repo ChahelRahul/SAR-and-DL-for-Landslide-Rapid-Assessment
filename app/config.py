@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
+import os
 from typing import Any, Literal, Mapping
 
 MODEL_NAME = "SAR-LRA"
@@ -52,10 +53,20 @@ class ProcessingConfig:
     tile_size: int = 64
     overlap: float = 0.5
     max_roi_km2: float = 10_000.0
+    max_roi_width_km: float = 500.0
+    max_roi_height_km: float = 500.0
+    max_roi_vertices: int = 50_000
     resolution_tolerance: float = 0.2
     max_nodata_fraction: float = 0.25
     value_min_db: float = -60.0
     value_max_db: float = 30.0
+    probability_aggregation: str = "maximum"
+    write_binary_mask: bool = True
+    vector_format: str = "geojson"
+    write_shapefile_zip: bool = False
+    inference_workers: int = 1
+    nms_diagnostic_limit: int = 100000
+    output_rows_per_chunk: int = 1024
 
     def __post_init__(self) -> None:
         if self.tile_size <= 0:
@@ -64,12 +75,30 @@ class ProcessingConfig:
             raise ValueError("processing.overlap must be at least 0 and less than 1")
         if self.max_roi_km2 <= 0:
             raise ValueError("processing.max_roi_km2 must be positive")
+        if self.max_roi_width_km <= 0 or self.max_roi_height_km <= 0:
+            raise ValueError("processing ROI dimension limits must be positive")
+        if self.max_roi_vertices <= 3:
+            raise ValueError("processing.max_roi_vertices must be greater than 3")
         if not 0 <= self.resolution_tolerance <= 1:
             raise ValueError("processing.resolution_tolerance must be between 0 and 1")
         if not 0 <= self.max_nodata_fraction < 1:
             raise ValueError("processing.max_nodata_fraction must be at least 0 and less than 1")
         if self.value_min_db >= self.value_max_db:
             raise ValueError("processing.value_min_db must be less than value_max_db")
+        if self.probability_aggregation != "maximum":
+            raise ValueError("processing.probability_aggregation currently supports only maximum")
+        if not isinstance(self.write_binary_mask, bool):
+            raise ValueError("processing.write_binary_mask must be a boolean")
+        if self.vector_format not in {"geojson", "geopackage", "both"}:
+            raise ValueError("processing.vector_format must be geojson, geopackage, or both")
+        if not isinstance(self.write_shapefile_zip, bool):
+            raise ValueError("processing.write_shapefile_zip must be a boolean")
+        if self.inference_workers <= 0:
+            raise ValueError("processing.inference_workers must be positive")
+        if self.nms_diagnostic_limit <= 0:
+            raise ValueError("processing.nms_diagnostic_limit must be positive")
+        if self.output_rows_per_chunk <= 0:
+            raise ValueError("processing.output_rows_per_chunk must be positive")
         if self.window_step <= 0:
             raise ValueError("processing.overlap leaves no positive window step")
 
@@ -104,7 +133,7 @@ class AppConfig:
         processing_raw = _mapping(raw.get("processing"), "processing")
         _reject_unknown(model_raw, {"version", "orbit", "probability_threshold", "nms_overlap", "batch_size"}, "model")
         _reject_unknown(imagery_raw, {"pre_days", "post_days", "scale_m"}, "imagery")
-        _reject_unknown(processing_raw, {"tile_size", "overlap", "max_roi_km2", "resolution_tolerance", "max_nodata_fraction", "value_min_db", "value_max_db"}, "processing")
+        _reject_unknown(processing_raw, {"tile_size", "overlap", "max_roi_km2", "max_roi_width_km", "max_roi_height_km", "max_roi_vertices", "resolution_tolerance", "max_nodata_fraction", "value_min_db", "value_max_db", "probability_aggregation", "write_binary_mask", "vector_format", "write_shapefile_zip", "inference_workers", "nms_diagnostic_limit", "output_rows_per_chunk"}, "processing")
         return cls(
             model=ModelConfig(**model_raw),
             imagery=ImageryConfig(**imagery_raw),
@@ -119,7 +148,7 @@ class AppConfig:
         output_dir = self.output_dir
         model_fields = {"version", "orbit", "probability_threshold", "nms_overlap", "batch_size"}
         imagery_fields = {"pre_days", "post_days", "scale_m"}
-        processing_fields = {"tile_size", "overlap", "max_roi_km2", "resolution_tolerance", "max_nodata_fraction", "value_min_db", "value_max_db"}
+        processing_fields = {"tile_size", "overlap", "max_roi_km2", "max_roi_width_km", "max_roi_height_km", "max_roi_vertices", "resolution_tolerance", "max_nodata_fraction", "value_min_db", "value_max_db", "probability_aggregation", "write_binary_mask", "vector_format", "write_shapefile_zip", "inference_workers", "nms_diagnostic_limit", "output_rows_per_chunk"}
         for key, value in overrides.items():
             if value is None:
                 continue
@@ -138,7 +167,7 @@ class AppConfig:
 
 def load_config(path: str | Path | None = None) -> AppConfig:
     if path is None:
-        return AppConfig()
+        return _with_environment_limits(AppConfig())
     try:
         import yaml
     except ImportError as exc:
@@ -152,7 +181,26 @@ def load_config(path: str | Path | None = None) -> AppConfig:
         raise ValueError(f"Invalid YAML configuration: {exc}") from exc
     if raw is not None and not isinstance(raw, Mapping):
         raise ValueError("Configuration root must be a mapping")
-    return AppConfig.from_mapping(raw)
+    return _with_environment_limits(AppConfig.from_mapping(raw))
+
+
+def _with_environment_limits(config: AppConfig) -> AppConfig:
+    mapping = {
+        "SAR_LRA_MAX_ROI_KM2": ("max_roi_km2", float),
+        "SAR_LRA_MAX_ROI_WIDTH_KM": ("max_roi_width_km", float),
+        "SAR_LRA_MAX_ROI_HEIGHT_KM": ("max_roi_height_km", float),
+        "SAR_LRA_MAX_ROI_VERTICES": ("max_roi_vertices", int),
+    }
+    overrides: dict[str, Any] = {}
+    for env_name, (field_name, cast) in mapping.items():
+        raw = os.getenv(env_name)
+        if raw is None:
+            continue
+        try:
+            overrides[field_name] = cast(raw)
+        except ValueError as exc:
+            raise ValueError(f"{env_name} has invalid value: {raw!r}") from exc
+    return config.with_overrides(**overrides) if overrides else config
 
 
 def _mapping(value: Any, name: str) -> dict[str, Any]:

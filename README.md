@@ -98,29 +98,32 @@ Run local-raster inference with `sar-lra --help`. Earth Engine initialization is
 Use the documented defaults in [`config/default.yaml`](config/default.yaml), or override individual values through CLI options.
 
 ```bash
-sar-lra --config config/default.yaml --help
+sar-lra predict-raster --config config/default.yaml --help
 ```
 
 Configuration validation occurs before model or raster processing. The effective configuration is written to result metadata and geospatial output metadata. Scientific rationale and validation rules are documented in [`docs/configuration.md`](docs/configuration.md).
 
-## Operational modes
+## Command-line interface
 
-Earth Engine acquisition and inference:
+The supported CLI now separates validation, acquisition and inference:
 
 ```bash
+sar-lra validate-roi --roi roi.geojson
+
+sar-lra acquire --roi roi.geojson --event-date 2024-04-03 \
+  --orbit ASCENDING --output-dir imagery
+
+sar-lra predict-raster --input imagery/ascending.tif --orbit ASCENDING \
+  --weights model/weights/<ascending-weight>.hdf5 --output-dir results
+
 sar-lra predict --roi roi.geojson --event-date 2024-04-03 \
-  --source earth-engine --orbit ASCENDING --weights model.hdf5
+  --orbits ASCENDING,DESCENDING \
+  --ascending-weights model/weights/<ascending-weight>.hdf5 \
+  --descending-weights model/weights/<descending-weight>.hdf5 \
+  --output-dir results
 ```
 
-Prepared raster inference, with no Earth Engine dependency:
-
-```bash
-sar-lra predict-raster --ascending ascending-4band.tif \
-  --weights model.hdf5 --output-dir results
-```
-
-See [`docs/issue-5-acquisition-inference.md`](docs/issue-5-acquisition-inference.md)
-for the intermediate-raster contract, cache behavior and common result schema.
+Use `--log-format json` for structured JSON-Line diagnostics on stderr. Validation/configuration failures return exit code 3, acquisition/dependency failures 4, processing failures 5, and Ctrl+C returns 130. Generated run artifacts are checked to remain below `--output-dir`. See [`docs/issue-13-cli.md`](docs/issue-13-cli.md).
 
 ## Intermediate raster validation
 
@@ -129,3 +132,126 @@ All prepared and Earth Engine rasters are validated before model loading. See `d
 ## Model loss compatibility
 
 The released V2 weights are used for inference with an uncompiled model. The archived reference implementation used a sigmoid output together with `binary_crossentropy(..., from_logits=True)` inside its focal loss. Issue 7 preserves that historical loss as `released_focal_loss()` and exposes a separate `probability_focal_loss()` for controlled experiments; inference outputs do not depend on either compile-time loss. See [`docs/issue-7-focal-loss-consistency.md`](docs/issue-7-focal-loss-consistency.md).
+
+### Sliding-window edge coverage
+
+Inference includes the final horizontal and vertical model window even when raster dimensions are not divisible by the configured window step. Rasters smaller than one model window are edge-padded for model input only; output coordinates remain clipped to observed pixels, and NoData/outside-ROI pixels are masked from detections. See `docs/issue-8-sliding-window-edge-coverage.md`.
+
+## Probability-preserving post-processing
+
+Inference now always writes `probability.tif`, a float32 surface formed from the maximum model-window probability covering each valid pixel. This is distinct from the optional thresholded `detection-mask.tif` and should not be interpreted as a pixel-level segmentation probability. Vector outputs include confidence, orbit and model-version metadata.
+
+A different threshold can be applied without rerunning TensorFlow inference:
+
+```bash
+sar-lra threshold-raster \
+  --probability-raster results/<request-id>/probability.tif \
+  --threshold 0.75 \
+  --output results/<request-id>/detection-mask-075.tif
+```
+
+See [`docs/issue-9-probability-postprocessing.md`](docs/issue-9-probability-postprocessing.md).
+
+### Detection geometry semantics
+
+SAR-LRA is a window classifier. Output polygons are thresholded **candidate areas**, not exact landslide boundaries. Historical box NMS and conventional IoU NMS are both recorded for diagnostics, but neither defines the operational vector output. See `docs/issue-10-nms-detection-geometry.md`.
+
+## Vector output formats
+
+GeoJSON is the default operational vector output and is always written as `detections.geojson`, including a valid empty `FeatureCollection` when there are no detections. GeoJSON is EPSG:4326. GeoPackage is available with `--vector-format geopackage` (or `both`) and preserves the raster CRS. Candidate geometries are clipped to a supplied ROI. Shapefile is compatibility-only and, when requested with `--shapefile-zip`, is returned as one ZIP archive rather than loose sidecar files. See [`docs/issue-11-vector-output-formats.md`](docs/issue-11-vector-output-formats.md).
+
+## Reference regression tests
+
+Compact ASCENDING and DESCENDING reference-event fixtures are committed under `tests/fixtures/reference/`. They are project-authored synthetic Sentinel-1-like rasters anchored to the public Haiti 2021 and Sumatra 2022 event locations, so normal CI requires neither Earth Engine nor downloaded imagery. Expected patch counts, probability statistics, detection counts and geometry bounds are versioned in `*.expected.json`; see `docs/issue-12-reference-event-regression.md`.
+
+### ROI safety limits
+
+ROI requests are validated before acquisition/inference. The default deployment limits are 10,000 km² area, 500 km bounding-box width/height, and 50,000 vertices. Invalid/self-intersecting geometries, out-of-range coordinates, antimeridian-crossing requests, future event dates, and dates before the Earth Engine Sentinel-1 GRD collection are rejected.
+
+```bash
+sar-lra validate-roi --roi roi.geojson
+```
+
+The command reports geodesic area and dimensions. Deployment limits can be overridden with `SAR_LRA_MAX_ROI_KM2`, `SAR_LRA_MAX_ROI_WIDTH_KM`, `SAR_LRA_MAX_ROI_HEIGHT_KM`, and `SAR_LRA_MAX_ROI_VERTICES`. See `docs/issue-14-roi-validation-processing-limits.md`.
+
+## CPU Docker image
+
+A pinned CPU-only `linux/amd64` image can be built directly from the repository:
+
+```bash
+docker build --platform linux/amd64 -t sar-lra:cpu .
+```
+
+The container runs as a non-root user, uses `sar-lra` as its entrypoint, embeds
+and verifies the released model weights, and expects read-only inputs under
+`/input` and writable results under `/output`. See
+[`docs/issue-15-cpu-docker.md`](docs/issue-15-cpu-docker.md) for prepared-raster
+and Earth Engine examples.
+
+## Secure Earth Engine authentication
+
+Earth Engine credentials are runtime inputs and are never embedded in the container. The recommended container pattern is a read-only mounted service-account/ADC file:
+
+```bash
+docker run --rm \
+  -e GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/gee.json \
+  -v "$PWD/gee.json:/run/secrets/gee.json:ro" \
+  -v "$PWD/input:/input:ro" \
+  -v "$PWD/results:/output" \
+  sar-lra:cpu acquire --project YOUR_PROJECT --roi /input/roi.geojson \
+  --event-date 2024-04-03 --orbit ASCENDING --output-dir /output
+```
+
+ADC, a read-only host `~/.config/earthengine` mount, and cloud Workload Identity/attached service accounts are also supported. See `docs/issue-16-earth-engine-authentication.md`. Prepared-raster inference requires no Google credentials.
+
+### Optional NVIDIA GPU container
+
+Issue 17 adds a separate GPU-capable image; the CPU image remains the default.
+
+```bash
+docker build --platform linux/amd64 -f Dockerfile.gpu -t sar-lra:gpu .
+docker run --rm --gpus all \
+  --entrypoint python sar-lra:gpu \
+  /opt/sar-lra/scripts/container_gpu_smoke_test.py
+```
+
+Run normal commands with `sar-lra:gpu` and `--gpus all`. The host must provide an NVIDIA driver and NVIDIA Container Toolkit. A missing GPU is treated as a deployment error for the GPU smoke test rather than silently passing as CPU execution. See `docs/issue-17-gpu-docker.md`.
+
+## Bounded-memory inference
+
+Sliding-window model patches are predicted incrementally rather than accumulated
+for the full ROI. Production runs use disk-backed probability/mask work arrays,
+and GeoTIFF outputs are written in row chunks. Control memory with `--batch-size`,
+`--inference-workers`, and `--output-rows-per-chunk`. See
+`docs/issue-18-streamed-inference.md`.
+
+## HTTP API
+
+An optional FastAPI service wraps the same validated pipeline as the CLI. Install with `.[api]` and run `sar-lra-api`, or override the CPU/GPU container entrypoint. It provides `/healthz`, `/readyz`, `/v1/predict-raster`, `/v1/predict`, and generated OpenAPI docs. Filesystem access is restricted to configured input/output roots and inference concurrency is bounded. See `docs/issue-19-fastapi-service.md`.
+
+## Asynchronous API jobs
+
+Long-running HTTP work can be queued through Redis instead of keeping a request open:
+
+```bash
+docker compose -f docker-compose.async.yml up --build
+```
+
+Submit with `POST /v1/jobs`, poll `GET /v1/jobs/{job_id}`, and fetch the completed result from `GET /v1/jobs/{job_id}/result`. The worker entry point is `sar-lra-worker`. Job metadata retention is controlled by `SAR_LRA_JOB_RETENTION_SECONDS` (default: 86400 seconds). See `docs/issue-20-asynchronous-jobs.md`.
+
+### Async worker resource controls
+
+Async deployments support bounded queue depth, per-job execution timeouts, retry caps, cancellation cleanup, a minimum free-disk floor, and container CPU/memory/PID limits. See `docs/issue-21-resource-timeout-cancellation.md`.
+
+Key environment variables:
+
+```text
+SAR_LRA_JOB_TIMEOUT_SECONDS=3600
+SAR_LRA_JOB_MAX_ATTEMPTS=3
+SAR_LRA_MAX_QUEUED_JOBS=100
+SAR_LRA_MIN_FREE_DISK_MB=1024
+```
+
+## Published container images
+
+Issue 22 adds the GHCR release workflow. On `main`, the CPU image is published as `ghcr.io/<owner>/sar-lra`; semantic release tags such as `v1.0.0` publish both CPU and GPU images with `1.0.0`, `1.0`, `1`, `latest`, and `sha-<commit>` aliases. Each published image is SBOM-generated, Trivy-scanned, and keylessly signed with Cosign. See `docs/issue-22-ghcr-release.md`.

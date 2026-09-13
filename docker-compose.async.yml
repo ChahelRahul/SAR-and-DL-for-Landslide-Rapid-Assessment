@@ -1,0 +1,61 @@
+services:
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sar-lra:cpu
+    entrypoint: ["sar-lra-api"]
+    environment:
+      SAR_LRA_REDIS_URL: redis://redis:6379/0
+      SAR_LRA_API_INPUT_ROOT: /input
+      SAR_LRA_API_OUTPUT_ROOT: /output
+      SAR_LRA_JOB_RETENTION_SECONDS: "86400"
+      SAR_LRA_JOB_TIMEOUT_SECONDS: "3600"
+      SAR_LRA_JOB_MAX_ATTEMPTS: "3"
+      SAR_LRA_MAX_QUEUED_JOBS: "100"
+      SAR_LRA_MIN_FREE_DISK_MB: "1024"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./input:/input:ro
+      - sar-lra-results:/output
+    depends_on:
+      - redis
+    mem_limit: ${SAR_LRA_API_MEMORY_LIMIT:-1g}
+    cpus: ${SAR_LRA_API_CPUS:-1.0}
+    pids_limit: ${SAR_LRA_API_PIDS_LIMIT:-256}
+    restart: unless-stopped
+
+  worker:
+    image: sar-lra:cpu
+    entrypoint: ["sar-lra-worker"]
+    environment:
+      SAR_LRA_REDIS_URL: redis://redis:6379/0
+      SAR_LRA_API_INPUT_ROOT: /input
+      SAR_LRA_API_OUTPUT_ROOT: /output
+      SAR_LRA_JOB_RETENTION_SECONDS: "86400"
+      SAR_LRA_JOB_TIMEOUT_SECONDS: "3600"
+      SAR_LRA_JOB_MAX_ATTEMPTS: "3"
+      SAR_LRA_MAX_QUEUED_JOBS: "100"
+      SAR_LRA_MIN_FREE_DISK_MB: "1024"
+    volumes:
+      - ./input:/input:ro
+      - sar-lra-results:/output
+    depends_on:
+      - redis
+    mem_limit: ${SAR_LRA_WORKER_MEMORY_LIMIT:-8g}
+    cpus: ${SAR_LRA_WORKER_CPUS:-4.0}
+    pids_limit: ${SAR_LRA_WORKER_PIDS_LIMIT:-512}
+    stop_grace_period: 30s
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+  sar-lra-results:

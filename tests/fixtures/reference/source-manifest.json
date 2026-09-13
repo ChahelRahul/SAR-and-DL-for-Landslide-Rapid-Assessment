@@ -1,0 +1,30 @@
+{
+  "fixtures": [
+    {
+      "id": "haiti-2021-ascending",
+      "orbit": "ASCENDING",
+      "event_date": "2021-08-14",
+      "event_lon": -73.482,
+      "event_lat": 18.434,
+      "epsg": 32618,
+      "seed": 17,
+      "public_event_reference": "USGS M7.2 Nippes, Haiti earthquake, 2021-08-14",
+      "fixture_license": "MIT",
+      "pixel_data": "project-authored synthetic Sentinel-1-like values; no third-party imagery pixels redistributed",
+      "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000f65h"
+    },
+    {
+      "id": "sumatra-2022-descending",
+      "orbit": "DESCENDING",
+      "event_date": "2022-02-25",
+      "event_lon": 100.101,
+      "event_lat": 0.219,
+      "epsg": 32647,
+      "seed": 29,
+      "public_event_reference": "USGS M6.1 65 km NNW of Bukittinggi, Indonesia, 2022-02-25",
+      "fixture_license": "MIT",
+      "pixel_data": "project-authored synthetic Sentinel-1-like values; no third-party imagery pixels redistributed",
+      "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000gzyg"
+    }
+  ]
+}

@@ -18,3 +18,7 @@ python -m pytest
 ```
 
 Do not commit generated rasters, shapefiles, prediction archives, Earth Engine credentials, or local runtime directories.
+
+### Async job tests
+
+Issue 20 queue/worker tests use `InMemoryJobBackend`, so the normal unit suite does not require a live Redis server. Deployment uses `RedisJobBackend`; integration deployments should exercise Redis through `docker-compose.async.yml`.

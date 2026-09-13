@@ -1,0 +1,35 @@
+{
+  "fixture_version": 1,
+  "orbit": "ASCENDING",
+  "input_metadata": {
+    "width": 96,
+    "height": 80,
+    "band_order": [
+      "postVV",
+      "postVH",
+      "diffVV",
+      "diffVH"
+    ]
+  },
+  "patch_count": 4,
+  "probability_statistics": {
+    "min": 0.522956907749176,
+    "max": 0.7038047909736633,
+    "mean": 0.664152204990387
+  },
+  "candidate_count": 2,
+  "iou_retained_count": 1,
+  "positive_pixels": 2300,
+  "vector_feature_count": 1,
+  "output_geometry_bounds": [
+    660156.8644348492,
+    2038624.357230877,
+    660616.8644348492,
+    2039124.3572308768
+  ],
+  "tolerances": {
+    "cpu_absolute": 1e-06,
+    "gpu_absolute": 2e-05,
+    "gpu_relative": 2e-05
+  }
+}

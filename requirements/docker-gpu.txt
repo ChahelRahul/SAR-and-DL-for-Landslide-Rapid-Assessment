@@ -1,0 +1,18 @@
+# SAR-LRA GPU container direct dependency lock.
+# Python runtime: CPython 3.11.13, linux/amd64.
+# TensorFlow's `and-cuda` extra installs the compatible NVIDIA CUDA user-space
+# packages; the host must provide the NVIDIA driver/container runtime.
+numpy==1.26.4
+PyYAML==6.0.2
+rasterio==1.4.3
+geopandas==1.0.1
+shapely==2.0.7
+pyproj==3.7.0
+tensorflow[and-cuda]==2.18.0
+earthengine-api==1.6.5
+geemap==0.36.1
+leafmap==0.52.1
+fastapi==0.128.2
+uvicorn==0.48.0
+
+redis==6.4.0

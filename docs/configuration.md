@@ -33,3 +33,17 @@ The effective configuration is recorded in `result.json`, the output GeoTIFF tag
 | `processing.max_roi_km2` | `10000` | Operational guardrail against unexpectedly large, slow, or costly requests. It is not a scientific model limit. |
 
 Invalid or unknown fields, unsupported orbit values, non-positive durations and sizes, thresholds outside `[0, 1]`, and overlap outside `[0, 1)` fail during configuration loading, before raster or model processing starts. Request dates are validated before pipeline execution.
+
+## ROI processing limits
+
+The `processing` section also supports:
+
+```yaml
+processing:
+  max_roi_km2: 10000
+  max_roi_width_km: 500
+  max_roi_height_km: 500
+  max_roi_vertices: 50000
+```
+
+They can be overridden at deployment time by `SAR_LRA_MAX_ROI_KM2`, `SAR_LRA_MAX_ROI_WIDTH_KM`, `SAR_LRA_MAX_ROI_HEIGHT_KM`, and `SAR_LRA_MAX_ROI_VERTICES`. Environment variables take precedence over YAML values.

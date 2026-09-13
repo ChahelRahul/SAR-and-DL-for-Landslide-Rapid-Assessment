@@ -8,6 +8,7 @@ from typing import Any
 
 from app.config import AppConfig, EXPECTED_BAND_ORDER, ImageryConfig, Orbit
 from app.acquisition.local_raster import RasterInput, read_sentinel1_stack
+from app.acquisition.auth import initialize_earth_engine
 
 
 def initialize(project: str | None = None, *, authenticate: bool = False) -> Any:
@@ -15,9 +16,7 @@ def initialize(project: str | None = None, *, authenticate: bool = False) -> Any
         import ee
     except ImportError as exc:
         raise RuntimeError("Earth Engine acquisition requires the 'earth-engine' extra") from exc
-    if authenticate:
-        ee.Authenticate()
-    ee.Initialize(**({"project": project} if project else {}))
+    initialize_earth_engine(ee, project=project, interactive_auth=authenticate)
     return ee
 
 
@@ -30,8 +29,8 @@ def build_composite_image(
     event_date: date,
     config: ImageryConfig,
 ) -> Any:
-    pre_start = event_date - timedelta(days=config.imagery.pre_days)
-    post_end = event_date + timedelta(days=config.imagery.post_days)
+    pre_start = event_date - timedelta(days=config.pre_days)
+    post_end = event_date + timedelta(days=config.post_days)
     base = (
         ee.ImageCollection("COPERNICUS/S1_GRD")
         .filterBounds(geometry)

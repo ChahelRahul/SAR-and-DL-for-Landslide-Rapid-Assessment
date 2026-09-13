@@ -1,0 +1,173 @@
+name: publish-images
+
+on:
+  push:
+    branches: [main]
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+concurrency:
+  group: publish-images-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  CPU_IMAGE: ghcr.io/${{ github.repository_owner }}/sar-lra
+  GPU_IMAGE: ghcr.io/${{ github.repository_owner }}/sar-lra-gpu
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install test dependencies
+        run: python -m pip install -e '.[geo,api,dev]'
+      - name: Run unit and regression tests
+        run: python -m pytest
+
+  publish-cpu:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Refuse to overwrite an existing CPU semantic-version tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if docker buildx imagetools inspect "${CPU_IMAGE}:${version}" >/dev/null 2>&1; then
+            echo "Refusing to overwrite immutable release tag ${CPU_IMAGE}:${version}" >&2
+            exit 1
+          fi
+      - name: CPU image metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.CPU_IMAGE }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=sha,prefix=sha-
+      - name: Build and push CPU image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: mode=max
+      - name: Generate CPU SBOM
+        uses: anchore/sbom-action@v0.24.0
+        with:
+          image: ${{ env.CPU_IMAGE }}@${{ steps.build.outputs.digest }}
+          format: spdx-json
+          output-file: sar-lra-cpu.spdx.json
+      - name: Upload CPU SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sar-lra-cpu-sbom
+          path: sar-lra-cpu.spdx.json
+      - name: Scan CPU image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.CPU_IMAGE }}@${{ steps.build.outputs.digest }}
+          format: table
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v4.1.2
+      - name: Sign CPU image digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: cosign sign --yes "${CPU_IMAGE}@${DIGEST}"
+
+  publish-gpu:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Refuse to overwrite an existing GPU semantic-version tag
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if docker buildx imagetools inspect "${GPU_IMAGE}:${version}" >/dev/null 2>&1; then
+            echo "Refusing to overwrite immutable release tag ${GPU_IMAGE}:${version}" >&2
+            exit 1
+          fi
+      - name: GPU image metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.GPU_IMAGE }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest
+            type=sha,prefix=sha-
+      - name: Build and push GPU image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.gpu
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: mode=max
+      - name: Generate GPU SBOM
+        uses: anchore/sbom-action@v0.24.0
+        with:
+          image: ${{ env.GPU_IMAGE }}@${{ steps.build.outputs.digest }}
+          format: spdx-json
+          output-file: sar-lra-gpu.spdx.json
+      - name: Upload GPU SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sar-lra-gpu-sbom
+          path: sar-lra-gpu.spdx.json
+      - name: Scan GPU image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.GPU_IMAGE }}@${{ steps.build.outputs.digest }}
+          format: table
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v4.1.2
+      - name: Sign GPU image digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: cosign sign --yes "${GPU_IMAGE}@${DIGEST}"
