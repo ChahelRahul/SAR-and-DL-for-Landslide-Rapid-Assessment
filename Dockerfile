@@ -20,6 +20,13 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /opt/sar-lra
 
+# Rasterio/GDAL wheels dynamically link against Expat on Debian slim.
+# Install the runtime library explicitly so importing rasterio works in the
+# final image (libexpat.so.1 is provided by the libexpat1 package).
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends libexpat1 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install the large, pinned runtime dependency set before copying application
 # sources so normal code changes do not invalidate the dependency layer.
 COPY requirements/docker-cpu.txt /tmp/docker-cpu.txt
