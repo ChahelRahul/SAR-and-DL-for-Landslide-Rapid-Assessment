@@ -4,7 +4,7 @@ Importing this package performs no Earth Engine authentication, network access,
 or model-weight loading.
 """
 
-__version__ = "2.0.0b1"
+__version__ = "2.0.0"
 
 from .config import AppConfig, ImageryConfig, ModelConfig, ProcessingConfig
 from .schemas import EarthEngineRequest, PipelineResult, RasterInferenceRequest

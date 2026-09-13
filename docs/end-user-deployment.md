@@ -6,7 +6,7 @@ This guide is the primary notebook-free deployment path for SAR-LRA. It covers t
 
 ## 1. Fastest path: pull the CPU image and run the bundled sample
 
-The published CPU image is `ghcr.io/chahelrahul/sar-lra`. For a versioned production deployment, replace `latest` with an immutable release tag once available, for example `1.0.0`.
+The published CPU image is `ghcr.io/chahelrahul/sar-lra`. For a versioned production deployment, replace `latest` with an immutable release tag once available, for example `2.0.0`.
 
 ```bash
 mkdir -p results

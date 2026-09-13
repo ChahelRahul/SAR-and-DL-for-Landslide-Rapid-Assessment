@@ -171,3 +171,57 @@ jobs:
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
         run: cosign sign --yes "${GPU_IMAGE}@${DIGEST}"
+  create-release-v2:
+    if: github.ref == 'refs/tags/v2.0.0'
+    needs: [test, publish-cpu, publish-gpu]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify release version
+        shell: bash
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          expected = "2.0.0"
+          pyproject = Path("pyproject.toml").read_text()
+          package = re.search(r'^version = "([^"]+)"$', pyproject, re.M).group(1)
+          init_text = Path("app/__init__.py").read_text()
+          runtime = re.search(r'^__version__ = "([^"]+)"$', init_text, re.M).group(1)
+          if package != expected or runtime != expected:
+              raise SystemExit(f"release version mismatch: pyproject={package}, runtime={runtime}, expected={expected}")
+          PY
+      - name: Build Python release artifacts
+        run: |
+          python -m pip install --upgrade build
+          python -m build
+          sha256sum dist/* > SHA256SUMS
+      - name: Download CPU SBOM
+        uses: actions/download-artifact@v4
+        with:
+          name: sar-lra-cpu-sbom
+          path: release-sboms
+      - name: Download GPU SBOM
+        uses: actions/download-artifact@v4
+        with:
+          name: sar-lra-gpu-sbom
+          path: release-sboms
+      - name: Create immutable GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            echo "Refusing to overwrite existing GitHub Release ${GITHUB_REF_NAME}" >&2
+            exit 1
+          fi
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "SAR-LRA 2.0.0" \
+            --notes-file RELEASE_NOTES_v2.0.0.md \
+            dist/* SHA256SUMS release-sboms/*
+

@@ -7,14 +7,14 @@ SAR-LRA publishes container images to GitHub Container Registry (GHCR) from `.gi
 - CPU: `ghcr.io/<owner>/sar-lra`
 - GPU: `ghcr.io/<owner>/sar-lra-gpu`
 
-A push to `main` runs the test suite and publishes the CPU image. A semantic release tag such as `v1.0.0` runs the tests and publishes both CPU and GPU images.
+A push to `main` runs the test suite and publishes the CPU image. A semantic release tag such as `v2.0.0` runs the tests and publishes both CPU and GPU images.
 
 ## Tags
 
-For `v1.0.0`, both release images receive:
+For `v2.0.0`, both release images receive:
 
-- `1.0.0`
-- `1.0`
+- `2.0.0`
+- `2.0`
 - `1`
 - `latest`
 - `sha-<short-commit>`
@@ -37,15 +37,15 @@ SBOM files are retained as GitHub Actions artifacts. Image signing uses `id-toke
 Create an annotated semantic version tag and push it:
 
 ```bash
-git tag -a v1.0.0 -m "SAR-LRA 1.0.0"
-git push origin v1.0.0
+git tag -a v2.0.0 -m "SAR-LRA 2.0.0"
+git push origin v2.0.0
 ```
 
 After the workflow succeeds:
 
 ```bash
-docker pull ghcr.io/<owner>/sar-lra:1.0.0
-docker pull ghcr.io/<owner>/sar-lra-gpu:1.0.0
+docker pull ghcr.io/<owner>/sar-lra:2.0.0
+docker pull ghcr.io/<owner>/sar-lra-gpu:2.0.0
 ```
 
 The package owner may need to make the GHCR package public once, depending on organization/package defaults. Publishing itself uses the workflow-provided `GITHUB_TOKEN` with `packages: write`.
@@ -58,7 +58,7 @@ Cosign verification should bind the signature to the repository workflow identit
 cosign verify \
   --certificate-identity-regexp 'https://github.com/<owner>/<repo>/.github/workflows/publish-images.yml@refs/(heads/main|tags/v.*)' \
   --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
-  ghcr.io/<owner>/sar-lra:1.0.0
+  ghcr.io/<owner>/sar-lra:2.0.0
 ```
 
 The workflow deliberately does not publish GPU images from ordinary `main` pushes; GPU artifacts are release-tag only. Existing pull-request Docker workflows continue to build and smoke-test images without publishing them.
