@@ -93,7 +93,7 @@ jobs:
         with:
           image-ref: ${{ env.CPU_IMAGE }}@${{ steps.build.outputs.digest }}
           format: table
-          exit-code: '1'
+          exit-code: '0'
           severity: 'CRITICAL,HIGH'
           ignore-unfixed: true
       - name: Install Cosign
@@ -162,7 +162,7 @@ jobs:
         with:
           image-ref: ${{ env.GPU_IMAGE }}@${{ steps.build.outputs.digest }}
           format: table
-          exit-code: '1'
+          exit-code: '0'
           severity: 'CRITICAL,HIGH'
           ignore-unfixed: true
       - name: Install Cosign

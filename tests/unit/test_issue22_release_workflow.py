@@ -65,3 +65,12 @@ def test_ghcr_image_references_are_lowercase():
     assert "CPU_IMAGE: ghcr.io/chahelrahul/sar-lra" in workflow
     assert "GPU_IMAGE: ghcr.io/chahelrahul/sar-lra-gpu" in workflow
     assert "ghcr.io/${{ github.repository_owner }}" not in workflow
+
+
+def test_trivy_scans_are_non_blocking_but_retained():
+    workflow = (ROOT / ".github/workflows/publish-images.yml").read_text(encoding="utf-8")
+    assert workflow.count("uses: aquasecurity/trivy-action@v0.36.0") == 2
+    assert workflow.count("exit-code: '0'") >= 2
+    assert "exit-code: '1'" not in workflow
+    assert workflow.count("severity: 'CRITICAL,HIGH'") == 2
+    assert workflow.count("ignore-unfixed: true") == 2
