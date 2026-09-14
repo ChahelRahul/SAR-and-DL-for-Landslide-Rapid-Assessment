@@ -13,6 +13,7 @@ import numpy as np
 
 from app.acquisition.local_raster import RasterInput, read_sentinel1_stack
 from app.config import AppConfig, EXPECTED_BAND_ORDER, Orbit
+import shutil
 
 STAC_URL = "https://planetarycomputer.microsoft.com/api/stac/v1"
 RTC_COLLECTION = "sentinel-1-rtc"
@@ -285,21 +286,64 @@ def _safe_product_folder(item: Any) -> tuple[str, str]:
     return folder, parts[-2]
 
 
+def _validate_safe_product(product_dir: Path) -> None:
+    """Reject incomplete Sentinel-1 SAFE cache entries before sarsen opens them."""
+    manifest = product_dir / "manifest.safe"
+    annotations = product_dir / "annotation"
+    measurements = product_dir / "measurement"
+    if not manifest.is_file():
+        raise RuntimeError(f"Incomplete Sentinel-1 SAFE cache: missing {manifest}")
+    if not annotations.is_dir() or not any(annotations.glob("*.xml")):
+        raise RuntimeError(f"Incomplete Sentinel-1 SAFE cache: no annotation XML files in {annotations}")
+    if not measurements.is_dir() or not any(measurements.glob("*.tif*")):
+        raise RuntimeError(f"Incomplete Sentinel-1 SAFE cache: no measurement TIFF files in {measurements}")
+
+
 def _download_safe(item: Any, target_root: Path) -> Path:
     adlfs, pc, *_ = _grd_deps()
     folder, product_name = _safe_product_folder(item)
     local = target_root / product_name
     if (local / "manifest.safe").is_file():
-        return local
+        try:
+            _validate_safe_product(local)
+            return local
+        except RuntimeError:
+            shutil.rmtree(local, ignore_errors=True)
     target_root.mkdir(parents=True, exist_ok=True)
     # Anonymous read-only SAS token; PC_SDK_SUBSCRIPTION_KEY is not required.
     token = pc.sas.get_token("sentinel1euwest", "s1-grd").token
     fs = adlfs.AzureBlobFileSystem(account_name="sentinel1euwest", credential=token)
     if not fs.exists(f"{folder}/manifest.safe"):
         raise FileNotFoundError(f"Planetary Computer GRD manifest not found: {folder}/manifest.safe")
-    fs.get(folder, str(local), recursive=True)
-    if not (local / "manifest.safe").is_file():
-        raise RuntimeError(f"GRD download completed without manifest.safe: {local}")
+    # adlfs/fsspec recursive ``get`` may preserve the Azure source folder
+    # beneath ``local`` rather than copying its *contents* directly into it.
+    # Download into a temporary root, locate the SAFE manifest, then normalize
+    # the cache to ``target_root/<product_name>/manifest.safe``.
+    partial = target_root / f".{product_name}.partial"
+    if partial.exists():
+        shutil.rmtree(partial)
+    partial.mkdir(parents=True, exist_ok=True)
+    try:
+        fs.get(folder, str(partial), recursive=True)
+        manifests = list(partial.rglob("manifest.safe"))
+        if len(manifests) != 1:
+            raise RuntimeError(
+                f"GRD download expected exactly one manifest.safe for {product_name}; "
+                f"found {len(manifests)} under {partial}"
+            )
+        downloaded = manifests[0].parent
+        if local.exists():
+            shutil.rmtree(local)
+        if downloaded == partial:
+            partial.rename(local)
+        else:
+            shutil.move(str(downloaded), str(local))
+            shutil.rmtree(partial, ignore_errors=True)
+    except Exception:
+        shutil.rmtree(partial, ignore_errors=True)
+        raise
+
+    _validate_safe_product(local)
     return local
 
 
