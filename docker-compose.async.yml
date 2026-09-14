@@ -21,6 +21,7 @@ services:
       SAR_LRA_JOB_MAX_ATTEMPTS: "3"
       SAR_LRA_MAX_QUEUED_JOBS: "100"
       SAR_LRA_MIN_FREE_DISK_MB: "1024"
+      PC_SDK_SUBSCRIPTION_KEY: ${PC_SDK_SUBSCRIPTION_KEY:-}
     ports:
       - "8000:8000"
     volumes:
@@ -45,6 +46,7 @@ services:
       SAR_LRA_JOB_MAX_ATTEMPTS: "3"
       SAR_LRA_MAX_QUEUED_JOBS: "100"
       SAR_LRA_MIN_FREE_DISK_MB: "1024"
+      PC_SDK_SUBSCRIPTION_KEY: ${PC_SDK_SUBSCRIPTION_KEY:-}
     volumes:
       - ./input:/input:ro
       - sar-lra-results:/output

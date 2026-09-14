@@ -105,3 +105,61 @@ def test_request_id_rejects_path_characters(tmp_path):
         json={"input_raster": "scene.tif", "request_id": "../escape"},
     )
     assert response.status_code == 422
+
+
+def test_predict_auto_selects_planetary_computer_when_key_present(tmp_path, monkeypatch):
+    s = settings(tmp_path)
+    seen = {}
+    monkeypatch.setattr("app.api._weights", lambda *args, **kwargs: Path("weights.hdf5"))
+    monkeypatch.setenv("PC_SDK_SUBSCRIPTION_KEY", "test-key")
+
+    def fake_run(request, config):
+        seen["request"] = request
+        return PipelineResult(
+            request_id=request.request_id,
+            orbit=request.orbit,
+            status="succeeded_empty",
+            weights_sha256="abc",
+            mode="planetary-computer",
+        )
+
+    monkeypatch.setattr("app.pipeline.run_planetary_computer", fake_run)
+    response = TestClient(create_app(s)).post(
+        "/v1/predict",
+        json={
+            "roi": {
+                "type": "Polygon",
+                "coordinates": [[[85.30,27.65],[85.40,27.65],[85.40,27.75],[85.30,27.75],[85.30,27.65]]],
+            },
+            "event_date": "2025-08-15",
+            "orbit": "ASCENDING",
+            "request_id": "pc-api-test",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["mode"] == "planetary-computer"
+    assert seen["request"].request_id == "pc-api-test"
+
+
+def test_predict_can_select_earth_engine(tmp_path, monkeypatch):
+    s = settings(tmp_path)
+    monkeypatch.setattr("app.api._weights", lambda *args, **kwargs: Path("weights.hdf5"))
+
+    def fake_run(request, config):
+        return PipelineResult(request.request_id, request.orbit, "succeeded_empty", "abc", "earth-engine")
+
+    monkeypatch.setattr("app.pipeline.run_earth_engine", fake_run)
+    response = TestClient(create_app(s)).post(
+        "/v1/predict",
+        json={
+            "provider": "earth-engine",
+            "roi": {
+                "type": "Polygon",
+                "coordinates": [[[85.30,27.65],[85.40,27.65],[85.40,27.75],[85.30,27.75],[85.30,27.65]]],
+            },
+            "event_date": "2025-08-15",
+            "request_id": "ee-api-test",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["mode"] == "earth-engine"

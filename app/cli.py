@@ -106,6 +106,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_config_options(acquire, include_weights=False)
     acquire.add_argument("--roi", type=Path, required=True)
     acquire.add_argument("--event-date", type=date.fromisoformat, required=True)
+    acquire.add_argument("--provider", choices=("auto", "planetary-computer", "earth-engine"), default="auto")
     acquire.add_argument("--project", help="Earth Engine project")
     acquire.add_argument("--authenticate", action="store_true", help="Interactive local authentication only; containers should use mounted/ambient credentials")
     acquire.add_argument("--output-dir", type=Path, required=True)
@@ -124,6 +125,7 @@ def build_parser() -> argparse.ArgumentParser:
     ee_parser.add_argument("--weights", type=Path, help="Weights for a single-orbit run")
     ee_parser.add_argument("--ascending-weights", type=Path)
     ee_parser.add_argument("--descending-weights", type=Path)
+    ee_parser.add_argument("--provider", choices=("auto", "planetary-computer", "earth-engine"), default="auto")
     ee_parser.add_argument("--project", help="Earth Engine project")
     ee_parser.add_argument("--authenticate", action="store_true", help="Interactive local authentication only; containers should use mounted/ambient credentials")
     ee_parser.add_argument("--output-dir", type=Path, required=True)
@@ -299,14 +301,23 @@ def _command_acquire(args: argparse.Namespace) -> dict[str, Any]:
     roi_report = _validate_roi_payload(args, roi, config)
     _validate_event_date_arg(args.event_date)
 
-    from app.acquisition.earth_engine import acquire_intermediate_raster
+    from app.acquisition.providers import resolve_provider
     orbit: Orbit = config.model.orbit
     output_dir = config.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
-    raster, cache_hit = acquire_intermediate_raster(
-        roi_geojson=roi, event_date=args.event_date, orbit=orbit, config=config,
-        cache_dir=output_dir / ".cache", project=args.project, authenticate=args.authenticate,
-    )
+    provider = resolve_provider(args.provider)
+    if provider == "planetary-computer":
+        from app.acquisition.planetary_computer import acquire_intermediate_raster
+        raster, cache_hit = acquire_intermediate_raster(
+            roi_geojson=roi, event_date=args.event_date, orbit=orbit, config=config,
+            cache_dir=output_dir / ".cache",
+        )
+    else:
+        from app.acquisition.earth_engine import acquire_intermediate_raster
+        raster, cache_hit = acquire_intermediate_raster(
+            roi_geojson=roi, event_date=args.event_date, orbit=orbit, config=config,
+            cache_dir=output_dir / ".cache", project=args.project, authenticate=args.authenticate,
+        )
     target = output_dir / f"{orbit.lower()}.tif"
     if raster.path.resolve() != target.resolve():
         shutil.copy2(raster.path, target)
@@ -353,23 +364,37 @@ def _command_predict(args: argparse.Namespace) -> dict[str, Any]:
     _validate_event_date_arg(args.event_date)
     orbits = _parse_orbits(args.orbits, args.orbit)
 
-    from app.pipeline import run_earth_engine
-    from app.schemas import EarthEngineRequest
+    from app.acquisition.providers import resolve_provider
+    from app.schemas import EarthEngineRequest, PlanetaryComputerRequest
+    provider = resolve_provider(args.provider)
     base_request_id = args.request_id or uuid.uuid4().hex
     results = []
     for orbit in orbits:
         config = _effective_config(args, orbit=orbit)
         weights = _weight_for_orbit(args, orbit, len(orbits))
         request_id = base_request_id if len(orbits) == 1 else f"{base_request_id}-{orbit.lower()}"
-        result = run_earth_engine(
-            EarthEngineRequest(
-                request_id=request_id, orbit=orbit, event_date=args.event_date,
-                weights_path=weights, roi_geojson=roi, project=args.project,
-                authenticate=args.authenticate, cache_dir=config.output_dir / ".cache" / orbit.lower(),
-            ), config,
-        )
+        if provider == "planetary-computer":
+            from app.pipeline import run_planetary_computer
+            result = run_planetary_computer(
+                PlanetaryComputerRequest(
+                    request_id=request_id, orbit=orbit, event_date=args.event_date,
+                    weights_path=weights, roi_geojson=roi,
+                    cache_dir=config.output_dir / ".cache" / orbit.lower(),
+                ), config,
+            )
+        else:
+            from app.pipeline import run_earth_engine
+            result = run_earth_engine(
+                EarthEngineRequest(
+                    request_id=request_id, orbit=orbit, event_date=args.event_date,
+                    weights_path=weights, roi_geojson=roi, project=args.project,
+                    authenticate=args.authenticate, cache_dir=config.output_dir / ".cache" / orbit.lower(),
+                ), config,
+            )
         _ensure_generated_under(config.output_dir, [a.path for a in result.artifacts])
-        results.append(result.to_dict())
+        item = result.to_dict()
+        item["provider"] = provider
+        results.append(item)
     if len(results) == 1:
         results[0]["roi_validation"] = roi_report
         return results[0]

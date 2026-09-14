@@ -14,7 +14,7 @@ from typing import Any, Iterator
 from app.api import ApiSettings, _config, _weights
 from app.jobs import JobBackend, JobState, RedisJobBackend, utc_now
 from app.object_store import ObjectStoreSettings, mirror_job_output
-from app.schemas import EarthEngineRequest, RasterInferenceRequest
+from app.schemas import EarthEngineRequest, PlanetaryComputerRequest, RasterInferenceRequest
 
 
 class JobCancelled(RuntimeError):
@@ -146,22 +146,35 @@ def execute_job(job_id: str, backend: JobBackend, settings: ApiSettings) -> dict
                     config,
                     progress=checkpoint,
                 )
-            elif record.mode == "earth-engine":
-                from app.pipeline import run_earth_engine
-                result = run_earth_engine(
-                    EarthEngineRequest(
-                        request_id=job_id,
-                        orbit=orbit,
-                        event_date=date.fromisoformat(payload["event_date"]),
-                        weights_path=weights,
-                        roi_geojson=payload["roi"],
-                        project=payload.get("project"),
-                        authenticate=False,
-                        cache_dir=settings.output_root / ".cache",
-                    ),
-                    config,
-                    progress=checkpoint,
-                )
+            elif record.mode in {"auto", "planetary-computer", "earth-engine"}:
+                from app.acquisition.providers import resolve_provider
+                provider = resolve_provider(payload.get("provider") or record.mode)
+                if provider == "planetary-computer":
+                    from app.pipeline import run_planetary_computer
+                    result = run_planetary_computer(
+                        PlanetaryComputerRequest(
+                            request_id=job_id, orbit=orbit, event_date=date.fromisoformat(payload["event_date"]),
+                            weights_path=weights, roi_geojson=payload["roi"],
+                            cache_dir=settings.output_root / ".cache",
+                        ),
+                        config, progress=checkpoint,
+                    )
+                else:
+                    from app.pipeline import run_earth_engine
+                    result = run_earth_engine(
+                        EarthEngineRequest(
+                            request_id=job_id,
+                            orbit=orbit,
+                            event_date=date.fromisoformat(payload["event_date"]),
+                            weights_path=weights,
+                            roi_geojson=payload["roi"],
+                            project=payload.get("project"),
+                            authenticate=False,
+                            cache_dir=settings.output_root / ".cache",
+                        ),
+                        config,
+                        progress=checkpoint,
+                    )
             else:
                 raise ValueError(f"unknown job mode: {record.mode}")
             checkpoint()

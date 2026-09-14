@@ -7,7 +7,7 @@ from typing import Any, Literal
 
 from .config import MODEL_NAME, MODEL_VERSION, Orbit
 
-PipelineMode = Literal["earth-engine", "prepared-raster"]
+PipelineMode = Literal["earth-engine", "planetary-computer", "prepared-raster"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,6 +28,16 @@ class EarthEngineRequest:
     roi_geojson: dict[str, Any]
     project: str | None = None
     authenticate: bool = False
+    cache_dir: Path = Path("cache")
+
+
+@dataclass(frozen=True, slots=True)
+class PlanetaryComputerRequest:
+    request_id: str
+    orbit: Orbit
+    event_date: date
+    weights_path: Path
+    roi_geojson: dict[str, Any]
     cache_dir: Path = Path("cache")
 
 

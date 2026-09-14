@@ -1,49 +1,44 @@
-# Configuration
+# Configuration and environment
 
-SAR-LRA loads validated configuration from YAML. Command-line values override only the corresponding YAML values.
+## YAML
 
-```bash
-sar-lra \
-  --config config/default.yaml \
-  --request-id example \
-  --input-raster input.tif \
-  --weights model/weights/<orbit-model>.hdf5 \
-  --pre-end 2026-01-01 \
-  --post-start 2026-01-02 \
-  --orbit DESCENDING \
-  --probability-threshold 0.65
-```
+The default configuration is `config/default.yaml`. Main groups are model, imagery, and processing settings. Runtime overrides are available from the CLI for frequently changed parameters.
 
-The effective configuration is recorded in `result.json`, the output GeoTIFF tags, and each vector output record.
+Important imagery settings include the pre-event window, post-event window, scale, and Sentinel-1 orbit. Important processing settings include tile/window size, overlap, probability threshold/aggregation, batching, worker count, vector output, and output chunking.
 
-## Defaults and rationale
+## Environment variables
 
-| Setting | Default | Rationale |
-|---|---:|---|
-| `model.version` | `v2` | Identifies the documented V2 rapid-assessment workflow and orbit-specific released weights. |
-| `model.orbit` | `ASCENDING` | A valid explicit default for configuration templates; users must select the orbit matching the input imagery and weights. Ascending and descending weights are not interchangeable. |
-| `model.probability_threshold` | `0.6` | Retains the decision threshold used by the V2 reference inference workflow. It balances screening sensitivity against false detections and is not a calibrated probability guarantee. |
-| `model.nms_overlap` | `0.1` | Retains the V2 suppression setting to reduce duplicated overlapping detections while preserving spatially distinct candidates. |
-| `model.batch_size` | `512` | Retains the reference inference batch size. It affects memory and throughput, not model semantics, and may be reduced on constrained hardware. |
-| `imagery.pre_days` | `60` | Matches the model's documented pre-event median-composite window. Changing it creates a distribution shift from training. |
-| `imagery.post_days` | `12` | Matches the rapid post-event composite used by the released V2 models. |
-| `imagery.scale_m` | `10` | Matches Sentinel-1 GRD processing at nominal 10 m pixel spacing. |
-| `processing.tile_size` | `64` | Matches the trained model input of 64 × 64 pixels. Other values require compatible model weights. |
-| `processing.overlap` | `0.5` | Produces a 32-pixel step for 64-pixel tiles, matching the reference sliding-window workflow and reducing boundary misses. |
-| `processing.max_roi_km2` | `10000` | Operational guardrail against unexpectedly large, slow, or costly requests. It is not a scientific model limit. |
+### Provider selection and credentials
 
-Invalid or unknown fields, unsupported orbit values, non-positive durations and sizes, thresholds outside `[0, 1]`, and overlap outside `[0, 1)` fail during configuration loading, before raster or model processing starts. Request dates are validated before pipeline execution.
+| Variable | Purpose |
+|---|---|
+| `SAR_LRA_ACQUISITION_PROVIDER` | `auto`, `planetary-computer`, or `earth-engine`. |
+| `PC_SDK_SUBSCRIPTION_KEY` | Planetary Computer account/subscription key. |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Path to a Google service-account/ADC JSON visible inside the process/container. |
 
-## ROI processing limits
+### API/filesystem
 
-The `processing` section also supports:
+| Variable | Default | Purpose |
+|---|---|---|
+| `SAR_LRA_API_INPUT_ROOT` | `/input` | Allowed input filesystem root. |
+| `SAR_LRA_API_OUTPUT_ROOT` | `/output` | Output/cache root. |
+| `SAR_LRA_API_CONFIG` | unset | Optional YAML config path. |
+| `SAR_LRA_API_MAX_CONCURRENT` | `1` | Synchronous inference slots. |
+| `SAR_LRA_MODEL_DIR` | bundled model directory | Override model-weight directory. |
 
-```yaml
-processing:
-  max_roi_km2: 10000
-  max_roi_width_km: 500
-  max_roi_height_km: 500
-  max_roi_vertices: 50000
-```
+### Redis/jobs
 
-They can be overridden at deployment time by `SAR_LRA_MAX_ROI_KM2`, `SAR_LRA_MAX_ROI_WIDTH_KM`, `SAR_LRA_MAX_ROI_HEIGHT_KM`, and `SAR_LRA_MAX_ROI_VERTICES`. Environment variables take precedence over YAML values.
+| Variable | Default |
+|---|---:|
+| `SAR_LRA_REDIS_URL` | `redis://redis:6379/0` |
+| `SAR_LRA_JOB_RETENTION_SECONDS` | `86400` |
+| `SAR_LRA_JOB_TIMEOUT_SECONDS` | `3600` |
+| `SAR_LRA_JOB_MAX_ATTEMPTS` | `3` |
+| `SAR_LRA_MAX_QUEUED_JOBS` | `100` |
+| `SAR_LRA_MIN_FREE_DISK_MB` | `1024` |
+
+### S3/MinIO result mirroring
+
+`SAR_LRA_S3_ENDPOINT_URL`, `SAR_LRA_S3_BUCKET`, `SAR_LRA_S3_PREFIX`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_DEFAULT_REGION` configure optional S3-compatible result mirroring used by async workers.
+
+Never bake provider or object-store secrets into an image or repository.

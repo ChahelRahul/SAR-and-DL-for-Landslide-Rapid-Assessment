@@ -188,6 +188,13 @@ and verifies the released model weights, and expects read-only inputs under
 [`docs/issue-15-cpu-docker.md`](docs/issue-15-cpu-docker.md) for prepared-raster
 and Earth Engine examples.
 
+
+## Flexible acquisition providers
+
+`POST /v1/predict`, `POST /v1/jobs`, `sar-lra acquire`, and `sar-lra predict` support `auto`, `planetary-computer`, and `earth-engine`. Secrets stay outside request bodies. `auto` uses `SAR_LRA_ACQUISITION_PROVIDER` when set, otherwise prefers `PC_SDK_SUBSCRIPTION_KEY` and then conventional Earth Engine/ADC credential files. `/v1/predict-raster` and `sar-lra predict-raster` remain fully provider-independent and need no imagery-provider credential. See [`docs/ACQUISITION_PROVIDERS.md`](docs/ACQUISITION_PROVIDERS.md).
+
+Planetary Computer uses `sentinel-1-rtc`, filters IW VV/VH scenes by orbit, chooses a common relative orbit, converts RTC intensity to dB, and constructs the standard four-band stack. Planetary Computer Sentinel-1 RTC asset access requires `PC_SDK_SUBSCRIPTION_KEY`. Earth Engine supports service-account/ADC/Earth Engine credential files or attached cloud identity.
+
 ## Secure Earth Engine authentication
 
 Earth Engine credentials are runtime inputs and are never embedded in the container. The recommended container pattern is a read-only mounted service-account/ADC file:
@@ -276,3 +283,7 @@ For CLI-only use, no queue or object store is required:
 ```bash
 docker compose --profile cli run --rm cli --help
 ```
+
+## Documentation index
+
+The complete operator/user reference starts at [`docs/README.md`](docs/README.md), with dedicated references for the HTTP API, acquisition providers and credentials, CLI, configuration, deployment, outputs, architecture, security, and troubleshooting. The running API also serves Swagger UI at `/docs`, ReDoc at `/redoc`, and OpenAPI JSON at `/openapi.json`.

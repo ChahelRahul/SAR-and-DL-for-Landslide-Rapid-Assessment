@@ -16,7 +16,7 @@ from app.postprocessing.vector import (
     write_detection_geopackage,
     write_detection_shapefile_zip,
 )
-from app.schemas import EarthEngineRequest, OutputArtifact, PipelineResult, RasterInferenceRequest
+from app.schemas import EarthEngineRequest, PlanetaryComputerRequest, OutputArtifact, PipelineResult, RasterInferenceRequest
 from app.roi import validate_event_date, validate_roi
 
 
@@ -106,6 +106,35 @@ def run_earth_engine(
         progress=progress,
     )
 
+
+
+def run_planetary_computer(
+    request: PlanetaryComputerRequest,
+    config: AppConfig,
+    *,
+    progress: Callable[[str], None] | None = None,
+) -> PipelineResult:
+    if request.orbit != config.model.orbit:
+        raise ValueError("request orbit must match effective configuration orbit")
+    roi_report = _validate_processing_roi(request.roi_geojson, config)
+    validate_event_date(request.event_date)
+    if progress:
+        progress("acquiring")
+    from app.acquisition.planetary_computer import acquire_intermediate_raster
+
+    raster, cache_hit = acquire_intermediate_raster(
+        roi_geojson=request.roi_geojson, event_date=request.event_date, orbit=request.orbit,
+        config=config, cache_dir=request.cache_dir,
+    )
+    raster.metadata["cache_hit"] = cache_hit
+    if progress:
+        progress("preprocessing")
+    return _run_inference(
+        request_id=request.request_id, weights_path=request.weights_path, raster=raster,
+        config=config, mode="planetary-computer",
+        extra_artifacts=[OutputArtifact("intermediate_raster", raster.path)],
+        roi_geojson=request.roi_geojson, roi_report=roi_report, progress=progress,
+    )
 
 def _run_inference(
     *,

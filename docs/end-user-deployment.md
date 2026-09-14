@@ -119,55 +119,56 @@ sar-lra threshold-raster \
   --output results/<request-id>/detection-mask-075.tif
 ```
 
-## 4. Earth Engine mode
+## 4. Remote acquisition providers
 
-Earth Engine mode acquires and prepares the Sentinel-1 intermediate before invoking the same inference pipeline.
+SAR-LRA supports Microsoft Planetary Computer and Google Earth Engine. Use `--provider auto` to select from runtime credentials, or choose a provider explicitly. Provider secrets are runtime configuration and are never accepted in API request bodies.
 
-Validate the ROI first:
-
-```bash
-sar-lra validate-roi --roi roi.geojson
-```
-
-Example acquisition/inference request:
+### Planetary Computer
 
 ```bash
+export PC_SDK_SUBSCRIPTION_KEY='...'
 sar-lra predict \
+  --provider planetary-computer \
   --roi roi.geojson \
   --event-date 2024-04-03 \
-  --source earth-engine \
-  --orbits ASCENDING \
-  --project YOUR_GOOGLE_CLOUD_PROJECT \
-  --ascending-weights model/weights/VV_VH_60_nn_noSlope_ASCENDING_60_12_6_size_64_filters_32_batch_size_512_lr_0.001_dropout_0.7_fil1_3_fil2_3_fil3_3.hdf5 \
+  --orbit ASCENDING \
   --output-dir results
 ```
 
-Dates must not be in the future and must fall within the supported Sentinel-1 archive period. Local ROI/date validation runs before network acquisition, but Earth Engine performs the authoritative scene/orbit availability check.
+The Planetary Computer path uses Sentinel-1 RTC, converts linear VV/VH intensity to dB, and forms the four-band stack locally. See `ACQUISITION_PROVIDERS.md` for its scientific compatibility caveat.
 
-### Earth Engine credentials
+### Earth Engine mode
 
-Credentials are runtime secrets and must not be copied into a container image or committed to the repository. Production deployments should prefer Application Default Credentials, a workload identity/attached service account, or a read-only mounted credential file.
+#### Earth Engine credentials
 
-Example mounted credential file:
+
+```bash
+sar-lra predict \
+  --provider earth-engine \
+  --roi roi.geojson \
+  --event-date 2024-04-03 \
+  --orbit ASCENDING \
+  --project YOUR_GOOGLE_CLOUD_PROJECT \
+  --output-dir results
+```
+
+Production deployments should use Application Default Credentials, a workload identity/attached service account, a read-only mounted Earth Engine credential, or a read-only service-account JSON. Interactive authentication is intended for local development.
+
+Example mounted service-account credential:
 
 ```bash
 docker run --rm \
+  -e SAR_LRA_ACQUISITION_PROVIDER=earth-engine \
   -e GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/gee.json \
   --mount type=bind,src="$PWD/gee.json",dst=/run/secrets/gee.json,readonly \
   --mount type=bind,src="$PWD/input",dst=/input,readonly \
   --mount type=bind,src="$PWD/results",dst=/output \
   ghcr.io/chahelrahul/sar-lra:latest \
-  predict \
-  --roi /input/roi.geojson \
-  --event-date 2024-04-03 \
-  --source earth-engine \
-  --orbits ASCENDING \
-  --project YOUR_GOOGLE_CLOUD_PROJECT \
-  --ascending-weights /opt/sar-lra/model/weights/VV_VH_60_nn_noSlope_ASCENDING_60_12_6_size_64_filters_32_batch_size_512_lr_0.001_dropout_0.7_fil1_3_fil2_3_fil3_3.hdf5 \
-  --output-dir /output
+  predict --provider earth-engine --roi /input/roi.geojson --event-date 2024-04-03 \
+  --orbit ASCENDING --project YOUR_GOOGLE_CLOUD_PROJECT --output-dir /output
 ```
 
-Interactive `ee.Authenticate()` is a local-development escape hatch, not the recommended container mechanism.
+Dates must not be in the future and must fall within the supported Sentinel-1 archive period. Local ROI/date validation runs before remote acquisition.
 
 ## 5. ROI and date examples
 
@@ -297,7 +298,7 @@ A normal request directory can contain:
 | `detections.geojson` | EPSG:4326 candidate-area polygons; valid empty FeatureCollection if no detections. |
 | `detections.gpkg` | Optional candidate-area vectors preserving raster CRS. |
 | `result.json` | Machine-readable provenance, configuration, validation, model checksum, and processing metadata. |
-| intermediate Sentinel-1 GeoTIFF | Earth Engine mode only; cached/acquired four-band input. |
+| intermediate Sentinel-1 GeoTIFF | Remote-acquisition modes; cached/acquired four-band input. |
 
 Important interpretation rules:
 

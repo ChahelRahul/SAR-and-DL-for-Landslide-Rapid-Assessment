@@ -16,7 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app import __version__ as package_version
 from app.config import AppConfig, Orbit, load_config
-from app.schemas import EarthEngineRequest, RasterInferenceRequest
+from app.schemas import EarthEngineRequest, PlanetaryComputerRequest, RasterInferenceRequest
 from app.jobs import InMemoryJobBackend, JobBackend, JobRecord, JobState, RedisJobBackend, utc_now
 
 _REQUEST_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
@@ -32,8 +32,9 @@ class RasterPredictBody(BaseModel):
     probability_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
 
 
-class EarthEnginePredictBody(BaseModel):
+class PredictBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    provider: Literal["auto", "planetary-computer", "earth-engine"] = "auto"
     roi: dict[str, Any]
     event_date: date
     orbit: Literal["ASCENDING", "DESCENDING"] = "ASCENDING"
@@ -44,7 +45,7 @@ class EarthEnginePredictBody(BaseModel):
 
 class AsyncJobBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    source: Literal["prepared-raster", "earth-engine"]
+    source: Literal["prepared-raster", "auto", "planetary-computer", "earth-engine"]
     orbit: Literal["ASCENDING", "DESCENDING"] = "ASCENDING"
     request_id: str | None = None
     input_raster: str | None = None
@@ -237,27 +238,35 @@ def create_app(
         return run_bounded(execute)
 
     @app.post("/v1/predict")
-    def predict_earth_engine(body: EarthEnginePredictBody) -> dict[str, Any]:
+    def predict(body: PredictBody) -> dict[str, Any]:
         request_id = _safe_request_id(body.request_id)
         orbit: Orbit = body.orbit
         weights = _weights(body.weights_path, orbit, settings)
         config = _config(settings, orbit)
 
         def execute() -> dict[str, Any]:
-            from app.pipeline import run_earth_engine
-            result = run_earth_engine(
-                EarthEngineRequest(
-                    request_id=request_id,
-                    orbit=orbit,
-                    event_date=body.event_date,
-                    weights_path=weights,
-                    roi_geojson=body.roi,
-                    project=body.project,
-                    authenticate=False,
-                    cache_dir=settings.output_root / ".cache",
-                ),
-                config,
-            )
+            from app.acquisition.providers import resolve_provider
+            provider = resolve_provider(body.provider)
+            if provider == "planetary-computer":
+                from app.pipeline import run_planetary_computer
+                result = run_planetary_computer(
+                    PlanetaryComputerRequest(
+                        request_id=request_id, orbit=orbit, event_date=body.event_date,
+                        weights_path=weights, roi_geojson=body.roi,
+                        cache_dir=settings.output_root / ".cache",
+                    ),
+                    config,
+                )
+            else:
+                from app.pipeline import run_earth_engine
+                result = run_earth_engine(
+                    EarthEngineRequest(
+                        request_id=request_id, orbit=orbit, event_date=body.event_date,
+                        weights_path=weights, roi_geojson=body.roi, project=body.project,
+                        authenticate=False, cache_dir=settings.output_root / ".cache",
+                    ),
+                    config,
+                )
             return result.to_dict()
 
         return run_bounded(execute)
@@ -275,6 +284,7 @@ def create_app(
         }
         if body.weights_path is not None:
             payload["weights_path"] = str(_weights(body.weights_path, orbit, settings))
+        mode = body.source
         if body.source == "prepared-raster":
             if body.input_raster is None:
                 raise ValueError("input_raster is required for prepared-raster jobs")
@@ -282,12 +292,16 @@ def create_app(
             payload["roi"] = body.roi
         else:
             if body.roi is None or body.event_date is None:
-                raise ValueError("roi and event_date are required for earth-engine jobs")
+                raise ValueError("roi and event_date are required for remote acquisition jobs")
+            from app.acquisition.providers import resolve_provider
+            provider = resolve_provider(body.source)
             payload.update({
                 "roi": body.roi,
                 "event_date": body.event_date.isoformat(),
                 "project": body.project,
+                "provider": provider,
             })
+            mode = provider
         if job_backend.queue_length() >= settings.max_queued_jobs:
             raise HTTPException(
                 status_code=429,
@@ -297,7 +311,7 @@ def create_app(
         record = JobRecord(
             job_id=job_id,
             state=JobState.QUEUED,
-            mode=body.source,
+            mode=mode,
             payload=payload,
             retention_seconds=settings.job_retention_seconds,
             timeout_seconds=settings.job_timeout_seconds,

@@ -4,6 +4,18 @@ All notable changes to SAR-LRA are documented here.
 
 ## [2.0.0] - 2026-09-13
 
+### Added
+
+- Microsoft Planetary Computer Sentinel-1 RTC acquisition provider for `/v1/predict` and asynchronous jobs.
+- Runtime-only provider credential integration, automatic provider resolution, and comprehensive operator/API documentation.
+
+### Changed
+
+- `/v1/predict` now accepts `provider` with `auto`, `planetary-computer`, and `earth-engine`; `auto` resolves from runtime provider configuration/credentials.
+- CLI `acquire` and `predict` support the same provider selection model.
+- Prepared-raster inference remains the credential-free/provider-independent path.
+
+
 First production-oriented container/API release of the refactored SAR-LRA toolchain.
 
 ### Added
