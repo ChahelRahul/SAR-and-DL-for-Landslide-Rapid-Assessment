@@ -1,12 +1,8 @@
 #!/bin/sh
 set -eu
 
-APP_ROOT="${SAR_LRA_APP_ROOT:-/opt/sar-lra}"
-
 sar-lra --help >/dev/null
-python "${APP_ROOT}/scripts/verify_model_weights.py" \
-  --manifest "${APP_ROOT}/model/weights-manifest.json" \
-  --directory "${APP_ROOT}/model/weights"
+python /opt/sar-lra/scripts/verify_model_weights.py
 python - <<'PY'
 import tensorflow as tf
 assert tf.__version__ == "2.18.0", tf.__version__

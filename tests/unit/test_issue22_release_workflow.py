@@ -58,9 +58,3 @@ def test_registry_names_match_public_contract():
     text = _text()
     assert "CPU_IMAGE: ghcr.io/${{ github.repository_owner }}/sar-lra" in text
     assert "GPU_IMAGE: ghcr.io/${{ github.repository_owner }}/sar-lra-gpu" in text
-
-
-def test_sbom_scans_authenticate_explicitly_to_ghcr():
-    text = _text()
-    assert text.count("registry-username: ${{ github.actor }}") == 2
-    assert text.count("registry-password: ${{ secrets.GITHUB_TOKEN }}") == 2

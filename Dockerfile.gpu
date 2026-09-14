@@ -8,7 +8,7 @@ FROM --platform=linux/amd64 ${PYTHON_IMAGE}
 
 LABEL org.opencontainers.image.title="SAR-LRA GPU"
 LABEL org.opencontainers.image.description="Optional NVIDIA-GPU Sentinel-1 SAR landslide rapid-assessment CLI"
-LABEL org.opencontainers.image.version="2.0.0"
+LABEL org.opencontainers.image.version="2.0.0-beta.1"
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.variant="gpu"
 
@@ -25,13 +25,6 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /opt/sar-lra
 
-# Rasterio/GDAL wheels dynamically link against Expat on Debian slim.
-# Install the runtime library explicitly so importing rasterio works in the
-# final image (libexpat.so.1 is provided by the libexpat1 package).
-RUN apt-get update \
-    && apt-get install --yes --no-install-recommends libexpat1 \
-    && rm -rf /var/lib/apt/lists/*
-
 COPY requirements/docker-gpu.txt /tmp/docker-gpu.txt
 RUN python -m pip install --upgrade "pip==25.2" \
     && python -m pip install --only-binary=:all: -r /tmp/docker-gpu.txt
@@ -42,7 +35,6 @@ COPY config ./config
 COPY model ./model
 COPY schemas ./schemas
 COPY scripts ./scripts
-RUN chmod 0755 /opt/sar-lra/scripts/*.sh
 COPY docs ./docs
 COPY examples ./examples
 

@@ -20,9 +20,8 @@ def sha256_file(path: Path) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    project_root = Path(__file__).resolve().parents[1]
-    parser.add_argument("--manifest", default=str(project_root / "model" / "weights-manifest.json"))
-    parser.add_argument("--directory", default=str(project_root / "model" / "weights"))
+    parser.add_argument("--manifest", default="model/weights-manifest.json")
+    parser.add_argument("--directory", default="model/weights")
     parser.add_argument("--update-manifest", action="store_true")
     args = parser.parse_args()
 
