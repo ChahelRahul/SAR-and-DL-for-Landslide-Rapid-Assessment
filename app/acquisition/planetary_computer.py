@@ -304,6 +304,7 @@ def _download_safe(item: Any, target_root: Path) -> Path:
 
 
 def _build_dem(*, roi_geojson: dict[str, Any], config: AppConfig, cache_dir: Path) -> Path:
+    cache_dir.mkdir(parents=True, exist_ok=True)
     """Create a projected DEM for sarsen, using a local override or PC Copernicus DEM."""
     override = os.getenv("SAR_LRA_PC_DEM_PATH")
     if override:
@@ -358,6 +359,7 @@ def _build_dem(*, roi_geojson: dict[str, Any], config: AppConfig, cache_dir: Pat
 
 def _rtc_scene(product_path: Path, polarization: str, dem_path: Path, output_path: Path) -> Path:
     _adlfs, _pc, _pystac, _rasterio, sarsen, *_ = _grd_deps()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     if output_path.is_file():
         return output_path
     product = sarsen.Sentinel1SarProduct(str(product_path), measurement_group=f"IW/{polarization}")
