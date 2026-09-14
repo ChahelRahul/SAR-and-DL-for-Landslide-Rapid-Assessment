@@ -3,9 +3,11 @@
 ```text
 ROI + event date
       |
-      +--> provider=planetary-computer --> Sentinel-1 RTC --> dB/composites --+
+      +--> planetary-computer-grd --> GRD SAFE + DEM + sarsen RTC --------+
       |                                                                    |
-      +--> provider=earth-engine --------> Sentinel-1 GRD processing -------+--> 4-band stack
+      +--> planetary-computer-rtc --> precomputed RTC + dB/composites -----+--> 4-band stack
+      |                                                                    |
+      +--> earth-engine -----------> Sentinel-1 GRD processing ------------+
       |                                                                    |        |
       +--> prepared raster -------------------------------------------------+        v
                                                                                 validation

@@ -15,23 +15,29 @@ ROI = {
 
 def test_planetary_provider_is_import_safe():
     import app.acquisition.planetary_computer as provider
-    assert provider.COLLECTION == "sentinel-1-rtc"
+    assert provider.COLLECTION == "sentinel-1-grd"
+    assert provider.RTC_COLLECTION == "sentinel-1-rtc"
 
 
-def test_planetary_search_requires_subscription_key(monkeypatch):
+def test_keyless_grd_is_default_without_subscription_key(monkeypatch):
+    from app.acquisition.providers import resolve_provider
+    monkeypatch.delenv("PC_SDK_SUBSCRIPTION_KEY", raising=False)
+    monkeypatch.delenv("SAR_LRA_ACQUISITION_PROVIDER", raising=False)
+    assert resolve_provider("auto") == "planetary-computer-grd"
+    assert resolve_provider("planetary-computer") == "planetary-computer-grd"
+
+
+def test_precomputed_rtc_requires_subscription_key(monkeypatch):
     import app.acquisition.planetary_computer as provider
     monkeypatch.delenv("PC_SDK_SUBSCRIPTION_KEY", raising=False)
     class DummyPC:
         class settings:
             @staticmethod
             def set_subscription_key(_): pass
-    class DummyClient:
-        pass
+    class DummyClient: pass
     monkeypatch.setattr(provider, "_deps", lambda: (DummyPC, DummyClient, None, None, None, None, None, None, None))
-    with pytest.raises(RuntimeError, match="PC_SDK_SUBSCRIPTION_KEY"):
-        provider.search_items(
-            roi_geojson=ROI, event_date=date(2025, 8, 15), orbit="ASCENDING", config=AppConfig()
-        )
+    with pytest.raises(RuntimeError, match="precomputed RTC"):
+        provider.search_rtc_items(roi_geojson=ROI, event_date=date(2025, 8, 15), orbit="ASCENDING", config=AppConfig())
 
 
 def test_pipeline_mode_includes_planetary_computer(tmp_path, monkeypatch):
@@ -54,7 +60,7 @@ def test_auto_provider_prefers_planetary_computer_key(monkeypatch):
     from app.acquisition.providers import resolve_provider
     monkeypatch.setenv("PC_SDK_SUBSCRIPTION_KEY", "secret")
     monkeypatch.delenv("SAR_LRA_ACQUISITION_PROVIDER", raising=False)
-    assert resolve_provider("auto") == "planetary-computer"
+    assert resolve_provider("auto") == "planetary-computer-grd"
 
 
 def test_explicit_earth_engine_does_not_require_pc_key(monkeypatch):

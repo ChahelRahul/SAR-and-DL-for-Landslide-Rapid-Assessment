@@ -23,7 +23,7 @@ sar-lra acquire \
   --output-dir /output
 ```
 
-Providers: `auto`, `planetary-computer`, `earth-engine`. `--project` and `--authenticate` apply to Earth Engine; interactive authentication is intended for local development, not containers.
+Providers: `auto`, `planetary-computer-grd` (alias `planetary-computer`), `planetary-computer-rtc`, `earth-engine`. `auto` defaults to keyless GRD. `--project` and `--authenticate` apply to Earth Engine; interactive authentication is intended for local development, not containers.
 
 ## `predict`
 

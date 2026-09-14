@@ -7,7 +7,7 @@ from typing import Any, Literal
 
 from .config import MODEL_NAME, MODEL_VERSION, Orbit
 
-PipelineMode = Literal["earth-engine", "planetary-computer", "prepared-raster"]
+PipelineMode = Literal["earth-engine", "planetary-computer-grd", "planetary-computer-rtc", "prepared-raster"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,6 +39,7 @@ class PlanetaryComputerRequest:
     weights_path: Path
     roi_geojson: dict[str, Any]
     cache_dir: Path = Path("cache")
+    variant: Literal["grd", "rtc"] = "grd"
 
 
 @dataclass(slots=True)

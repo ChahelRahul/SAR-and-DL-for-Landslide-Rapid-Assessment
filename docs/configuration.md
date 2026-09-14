@@ -12,8 +12,9 @@ Important imagery settings include the pre-event window, post-event window, scal
 
 | Variable | Purpose |
 |---|---|
-| `SAR_LRA_ACQUISITION_PROVIDER` | `auto`, `planetary-computer`, or `earth-engine`. |
-| `PC_SDK_SUBSCRIPTION_KEY` | Planetary Computer account/subscription key. |
+| `SAR_LRA_ACQUISITION_PROVIDER` | `auto`, `planetary-computer-grd` (alias `planetary-computer`), `planetary-computer-rtc`, or `earth-engine`. |
+| `PC_SDK_SUBSCRIPTION_KEY` | Optional; required only for `planetary-computer-rtc`, not for keyless GRD. |
+| `SAR_LRA_PC_DEM_PATH` | Optional local DEM override for the keyless GRD path. |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to a Google service-account/ADC JSON visible inside the process/container. |
 
 ### API/filesystem

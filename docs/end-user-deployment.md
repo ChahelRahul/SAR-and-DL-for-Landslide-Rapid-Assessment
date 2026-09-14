@@ -126,16 +126,15 @@ SAR-LRA supports Microsoft Planetary Computer and Google Earth Engine. Use `--pr
 ### Planetary Computer
 
 ```bash
-export PC_SDK_SUBSCRIPTION_KEY='...'
 sar-lra predict \
-  --provider planetary-computer \
+  --provider planetary-computer-grd \
   --roi roi.geojson \
   --event-date 2024-04-03 \
   --orbit ASCENDING \
   --output-dir results
 ```
 
-The Planetary Computer path uses Sentinel-1 RTC, converts linear VV/VH intensity to dB, and forms the four-band stack locally. See `ACQUISITION_PROVIDERS.md` for its scientific compatibility caveat.
+The default Planetary Computer path is keyless: it downloads Sentinel-1 GRD SAFE products using an anonymously issued SAS token, terrain-corrects them locally with `sarsen`, converts to dB, and forms the four-band stack. Use `planetary-computer-rtc` with `PC_SDK_SUBSCRIPTION_KEY` for the precomputed RTC collection. See `ACQUISITION_PROVIDERS.md` for its scientific compatibility caveat.
 
 ### Earth Engine mode
 

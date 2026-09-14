@@ -1,33 +1,29 @@
 # Troubleshooting
 
-## `Earth Engine authentication/initialization failed`
+## Planetary Computer GRD fails during download
 
-The request selected Earth Engine without usable credentials. Configure a service account/ADC/Earth Engine credential, provide the appropriate project, or choose Planetary Computer/prepared-raster mode.
+`planetary-computer-grd` does not require `PC_SDK_SUBSCRIPTION_KEY`, but it does require outbound access to the Planetary Computer STAC/SAS endpoints and Azure Blob Storage. Check DNS, HTTPS egress, and system time. Anonymous SAS tokens are short-lived and are requested internally.
 
-## `Planetary Computer ... requires PC_SDK_SUBSCRIPTION_KEY`
+## `Planetary Computer precomputed RTC access requires PC_SDK_SUBSCRIPTION_KEY`
 
-The request selected Planetary Computer but no key is available. Export the key into both API and worker containers for async jobs.
+You selected `planetary-computer-rtc`. Either provide `PC_SDK_SUBSCRIPTION_KEY` or switch to the default keyless `planetary-computer-grd` provider.
 
-## `No remote acquisition credentials were detected`
+## GRD terrain correction is slow
 
-`provider=auto` could not detect a supported credential. Set `SAR_LRA_ACQUISITION_PROVIDER` explicitly and provide its credential, or use `/v1/predict-raster`.
+This mode downloads complete SAFE products and runs local radiometric terrain correction. Reuse the output cache, keep the ROI small, provide fast local storage, and optionally mount a prebuilt DEM using `SAR_LRA_PC_DEM_PATH`.
 
-## `Bind for 0.0.0.0:9000 failed: port is already allocated`
+## DEM acquisition fails
 
-Another host process/container owns MinIO's published port. Change `SAR_LRA_MINIO_API_PORT`/`SAR_LRA_MINIO_CONSOLE_PORT`. Do not change the internal `http://minio:9000` endpoint used by Compose services.
+Mount a suitable DEM and set `SAR_LRA_PC_DEM_PATH=/input/dem.tif`. The DEM must cover the ROI. Using a fixed DEM is also recommended for scientific reproducibility.
 
-## `no matching manifest for linux/amd64`
+## Earth Engine authentication fails
 
-Check the image/tag with `docker buildx imagetools inspect`. Use the runnable image/tag/digest that contains `Platform: linux/amd64`, not a standalone attestation index/tag.
+Use `provider: "earth-engine"` only after configuring Google/Earth Engine credentials. Containers do not perform interactive authentication automatically.
 
-## Redis `vm.overcommit_memory` warning
+## API returns 429
 
-Redis can run but recommends enabling memory overcommit on the host. On Linux/WSL with appropriate privileges: `sudo sysctl -w vm.overcommit_memory=1`.
+The synchronous concurrency gate or asynchronous queue is full. Retry after the `Retry-After` interval or adjust the corresponding deployment limits.
 
-## Job remains queued
+## Input path rejected
 
-Verify the worker is running, can reach Redis, has the same provider credentials as the API, and has sufficient output disk.
-
-## `429 busy` or `queue_full`
-
-Synchronous concurrency or async queue limits have been reached. Retry later or raise the corresponding configured limit only if compute/memory capacity supports it.
+Prepared rasters must resolve under `SAR_LRA_API_INPUT_ROOT` (default `/input`). This is an intentional path traversal control.

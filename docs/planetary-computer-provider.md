@@ -1,18 +1,41 @@
-# Microsoft Planetary Computer acquisition provider
+# Microsoft Planetary Computer provider
 
-This provider is one of SAR-LRA's selectable remote Sentinel-1 acquisition backends. It is **not** forced as the default; `provider=auto` selects a configured provider from the runtime environment. See [ACQUISITION_PROVIDERS.md](ACQUISITION_PROVIDERS.md) for the complete provider/credential matrix.
+SAR-LRA exposes two Planetary Computer modes.
 
-The implementation searches the Planetary Computer STAC catalog at `https://planetarycomputer.microsoft.com/api/stac/v1` using `sentinel-1-rtc`, filters IW dual-polarization VV/VH scenes and a common relative orbit, reads signed VV/VH COG assets, converts linear RTC intensity to dB, creates pre/post temporal medians, and writes `postVV`, `postVH`, `diffVV`, `diffVH`.
+## Keyless GRD mode (recommended)
 
-## Authentication
+```bash
+sar-lra predict \
+  --provider planetary-computer-grd \
+  --roi roi.geojson \
+  --event-date 2025-08-15 \
+  --orbit ASCENDING \
+  --output-dir results
+```
 
-STAC discovery is public, but the Sentinel-1 RTC notebook/documentation supplied by Microsoft states that local asset access requires an API/subscription key. Supply `PC_SDK_SUBSCRIPTION_KEY` only at runtime; do not copy it into images or repositories.
+No `PC_SDK_SUBSCRIPTION_KEY` is required. SAR-LRA searches the public `sentinel-1-grd` STAC collection, obtains an anonymous read-only SAS token for the Azure GRD container, downloads required SAFE products, creates/uses a DEM, and performs local terrain correction with `sarsen`.
+
+`--provider planetary-computer` is an alias for this mode.
+
+## Precomputed RTC mode
 
 ```bash
 export PC_SDK_SUBSCRIPTION_KEY='...'
-sar-lra predict --provider planetary-computer --roi roi.geojson --event-date 2025-08-15 --orbit ASCENDING --output-dir results
+sar-lra predict --provider planetary-computer-rtc --roi roi.geojson --event-date 2025-08-15 --orbit ASCENDING --output-dir results
 ```
 
-## Scientific compatibility note
+This uses `sentinel-1-rtc`. It is faster operationally but the collection requires a Planetary Computer account key.
 
-Planetary Computer `sentinel-1-rtc` is radiometrically terrain corrected and stored as linear intensity. SAR-LRA converts each RTC scene to dB before temporal median compositing. This is not asserted to be numerically identical to the historical Earth Engine GRD preprocessing chain; reference-event regression is required before treating provider outputs as interchangeable.
+## DEM override
+
+The keyless GRD path normally builds a DEM from `cop-dem-glo-30`. To use a controlled DEM:
+
+```bash
+export SAR_LRA_PC_DEM_PATH=/input/dem.tif
+```
+
+This is useful for reproducible scientific validation.
+
+## Processing contract
+
+Both modes produce `postVV`, `postVH`, `diffVV`, `diffVH` in dB. They are not assumed to be numerically identical to Earth Engine preprocessing; validate against reference events before changing a production provider.

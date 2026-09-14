@@ -45,7 +45,7 @@ Fields:
 
 | Field | Required | Description |
 |---|---:|---|
-| `provider` | no | `auto`, `planetary-computer`, or `earth-engine`; default `auto`. |
+| `provider` | no | `auto`, `planetary-computer-grd` (alias `planetary-computer`), `planetary-computer-rtc`, or `earth-engine`; default `auto`. |
 | `roi` | yes | GeoJSON geometry or Feature representing the area of interest. |
 | `event_date` | yes | Event date in ISO `YYYY-MM-DD` form. |
 | `orbit` | no | `ASCENDING` or `DESCENDING`; default `ASCENDING`. |
@@ -108,7 +108,7 @@ Prepared raster example:
 }
 ```
 
-`source` accepts `prepared-raster`, `auto`, `planetary-computer`, or `earth-engine`.
+`source` accepts `prepared-raster`, `auto`, `planetary-computer-grd` (alias `planetary-computer`), `planetary-computer-rtc`, or `earth-engine`.
 
 Typical acceptance response:
 

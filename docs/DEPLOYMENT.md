@@ -31,7 +31,16 @@ docker compose up -d
 Set in `.env`:
 
 ```dotenv
-SAR_LRA_ACQUISITION_PROVIDER=planetary-computer
+SAR_LRA_ACQUISITION_PROVIDER=planetary-computer-grd
+# No Planetary Computer subscription key required.
+# Optional reproducible DEM override:
+# SAR_LRA_PC_DEM_PATH=/input/dem.tif
+```
+
+### Precomputed Planetary Computer RTC
+
+```dotenv
+SAR_LRA_ACQUISITION_PROVIDER=planetary-computer-rtc
 PC_SDK_SUBSCRIPTION_KEY=your-key
 ```
 

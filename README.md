@@ -191,9 +191,9 @@ and Earth Engine examples.
 
 ## Flexible acquisition providers
 
-`POST /v1/predict`, `POST /v1/jobs`, `sar-lra acquire`, and `sar-lra predict` support `auto`, `planetary-computer`, and `earth-engine`. Secrets stay outside request bodies. `auto` uses `SAR_LRA_ACQUISITION_PROVIDER` when set, otherwise prefers `PC_SDK_SUBSCRIPTION_KEY` and then conventional Earth Engine/ADC credential files. `/v1/predict-raster` and `sar-lra predict-raster` remain fully provider-independent and need no imagery-provider credential. See [`docs/ACQUISITION_PROVIDERS.md`](docs/ACQUISITION_PROVIDERS.md).
+`POST /v1/predict`, `POST /v1/jobs`, `sar-lra acquire`, and `sar-lra predict` support `auto`, `planetary-computer-grd` (alias `planetary-computer`), `planetary-computer-rtc`, and `earth-engine`. Secrets stay outside request bodies. `auto` uses `SAR_LRA_ACQUISITION_PROVIDER` when set and otherwise selects keyless `planetary-computer-grd`. `/v1/predict-raster` and `sar-lra predict-raster` remain fully provider-independent and need no imagery-provider credential. See [`docs/ACQUISITION_PROVIDERS.md`](docs/ACQUISITION_PROVIDERS.md).
 
-Planetary Computer uses `sentinel-1-rtc`, filters IW VV/VH scenes by orbit, chooses a common relative orbit, converts RTC intensity to dB, and constructs the standard four-band stack. Planetary Computer Sentinel-1 RTC asset access requires `PC_SDK_SUBSCRIPTION_KEY`. Earth Engine supports service-account/ADC/Earth Engine credential files or attached cloud identity.
+Planetary Computer defaults to the **keyless `sentinel-1-grd` path**: public STAC discovery, anonymous read-only SAS token issuance, local SAFE processing with `sarsen`, DEM-backed radiometric terrain correction, dB conversion, and the standard four-band stack. `planetary-computer-rtc` remains available for the precomputed RTC collection and requires `PC_SDK_SUBSCRIPTION_KEY`. Earth Engine remains optional and uses Google/EE credentials.
 
 ## Secure Earth Engine authentication
 

@@ -22,6 +22,7 @@ services:
       SAR_LRA_MAX_QUEUED_JOBS: "100"
       SAR_LRA_MIN_FREE_DISK_MB: "1024"
       PC_SDK_SUBSCRIPTION_KEY: ${PC_SDK_SUBSCRIPTION_KEY:-}
+      SAR_LRA_PC_DEM_PATH: ${SAR_LRA_PC_DEM_PATH:-}
     ports:
       - "8000:8000"
     volumes:
@@ -47,6 +48,7 @@ services:
       SAR_LRA_MAX_QUEUED_JOBS: "100"
       SAR_LRA_MIN_FREE_DISK_MB: "1024"
       PC_SDK_SUBSCRIPTION_KEY: ${PC_SDK_SUBSCRIPTION_KEY:-}
+      SAR_LRA_PC_DEM_PATH: ${SAR_LRA_PC_DEM_PATH:-}
     volumes:
       - ./input:/input:ro
       - sar-lra-results:/output

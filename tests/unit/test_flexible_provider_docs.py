@@ -23,6 +23,8 @@ def test_api_docs_cover_all_application_routes():
 def test_provider_docs_cover_remote_and_offline_modes():
     text = Path("docs/ACQUISITION_PROVIDERS.md").read_text()
     assert "PC_SDK_SUBSCRIPTION_KEY" in text
+    assert "anonymous" in text.lower()
+    assert "planetary-computer-grd" in text
     assert "GOOGLE_APPLICATION_CREDENTIALS" in text
     assert "planetary-computer" in text
     assert "earth-engine" in text

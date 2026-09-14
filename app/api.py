@@ -34,7 +34,7 @@ class RasterPredictBody(BaseModel):
 
 class PredictBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    provider: Literal["auto", "planetary-computer", "earth-engine"] = "auto"
+    provider: Literal["auto", "planetary-computer", "planetary-computer-grd", "planetary-computer-rtc", "earth-engine"] = "auto"
     roi: dict[str, Any]
     event_date: date
     orbit: Literal["ASCENDING", "DESCENDING"] = "ASCENDING"
@@ -45,7 +45,7 @@ class PredictBody(BaseModel):
 
 class AsyncJobBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    source: Literal["prepared-raster", "auto", "planetary-computer", "earth-engine"]
+    source: Literal["prepared-raster", "auto", "planetary-computer", "planetary-computer-grd", "planetary-computer-rtc", "earth-engine"]
     orbit: Literal["ASCENDING", "DESCENDING"] = "ASCENDING"
     request_id: str | None = None
     input_raster: str | None = None
@@ -247,13 +247,14 @@ def create_app(
         def execute() -> dict[str, Any]:
             from app.acquisition.providers import resolve_provider
             provider = resolve_provider(body.provider)
-            if provider == "planetary-computer":
+            if provider in {"planetary-computer-grd", "planetary-computer-rtc"}:
                 from app.pipeline import run_planetary_computer
                 result = run_planetary_computer(
                     PlanetaryComputerRequest(
                         request_id=request_id, orbit=orbit, event_date=body.event_date,
                         weights_path=weights, roi_geojson=body.roi,
                         cache_dir=settings.output_root / ".cache",
+                        variant="rtc" if provider.endswith("-rtc") else "grd",
                     ),
                     config,
                 )

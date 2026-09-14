@@ -88,6 +88,8 @@
               "prepared-raster",
               "auto",
               "planetary-computer",
+              "planetary-computer-grd",
+              "planetary-computer-rtc",
               "earth-engine"
             ],
             "title": "Source",
@@ -157,6 +159,8 @@
             "enum": [
               "auto",
               "planetary-computer",
+              "planetary-computer-grd",
+              "planetary-computer-rtc",
               "earth-engine"
             ],
             "title": "Provider",

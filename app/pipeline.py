@@ -124,14 +124,14 @@ def run_planetary_computer(
 
     raster, cache_hit = acquire_intermediate_raster(
         roi_geojson=request.roi_geojson, event_date=request.event_date, orbit=request.orbit,
-        config=config, cache_dir=request.cache_dir,
+        config=config, cache_dir=request.cache_dir, variant=request.variant,
     )
     raster.metadata["cache_hit"] = cache_hit
     if progress:
         progress("preprocessing")
     return _run_inference(
         request_id=request.request_id, weights_path=request.weights_path, raster=raster,
-        config=config, mode="planetary-computer",
+        config=config, mode=f"planetary-computer-{request.variant}",
         extra_artifacts=[OutputArtifact("intermediate_raster", raster.path)],
         roi_geojson=request.roi_geojson, roi_report=roi_report, progress=progress,
     )

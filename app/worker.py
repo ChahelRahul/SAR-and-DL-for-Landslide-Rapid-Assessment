@@ -146,16 +146,17 @@ def execute_job(job_id: str, backend: JobBackend, settings: ApiSettings) -> dict
                     config,
                     progress=checkpoint,
                 )
-            elif record.mode in {"auto", "planetary-computer", "earth-engine"}:
+            elif record.mode in {"auto", "planetary-computer", "planetary-computer-grd", "planetary-computer-rtc", "earth-engine"}:
                 from app.acquisition.providers import resolve_provider
                 provider = resolve_provider(payload.get("provider") or record.mode)
-                if provider == "planetary-computer":
+                if provider in {"planetary-computer-grd", "planetary-computer-rtc"}:
                     from app.pipeline import run_planetary_computer
                     result = run_planetary_computer(
                         PlanetaryComputerRequest(
                             request_id=job_id, orbit=orbit, event_date=date.fromisoformat(payload["event_date"]),
                             weights_path=weights, roi_geojson=payload["roi"],
                             cache_dir=settings.output_root / ".cache",
+                            variant="rtc" if provider.endswith("-rtc") else "grd",
                         ),
                         config, progress=checkpoint,
                     )
