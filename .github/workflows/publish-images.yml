@@ -81,6 +81,8 @@ jobs:
         uses: anchore/sbom-action@v0.24.0
         with:
           image: ${{ env.CPU_IMAGE }}@${{ steps.build.outputs.digest }}
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
           format: spdx-json
           output-file: sar-lra-cpu.spdx.json
       - name: Upload CPU SBOM
@@ -150,6 +152,8 @@ jobs:
         uses: anchore/sbom-action@v0.24.0
         with:
           image: ${{ env.GPU_IMAGE }}@${{ steps.build.outputs.digest }}
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
           format: spdx-json
           output-file: sar-lra-gpu.spdx.json
       - name: Upload GPU SBOM

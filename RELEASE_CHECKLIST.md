@@ -35,3 +35,8 @@
 - [ ] Verify documentation links point to the immutable `2.0.0` image where appropriate.
 - [ ] Record any release defect as a new issue; do not overwrite `2.0.0`.
 - [ ] Use `2.0.1` or later for corrections.
+
+### RC6 SBOM publication hardening
+
+- [ ] CPU and GPU SBOM steps authenticate explicitly to GHCR using `github.actor` and `GITHUB_TOKEN`.
+- [ ] Syft can scan the just-pushed digest even when anonymous GHCR pulls are unavailable or package visibility has not propagated.
