@@ -7,7 +7,7 @@ This directory is the operational reference for SAR-LRA 2.0.0.
 - [API reference](API.md) — all HTTP routes, request bodies, job lifecycle, responses, and examples.
 - [Acquisition providers and credentials](ACQUISITION_PROVIDERS.md) — Planetary Computer, Earth Engine, automatic provider selection, and credential-free prepared-raster mode.
 - [CLI reference](CLI.md) — every supported command and the main options.
-- [Configuration and environment](CONFIGURATION.md) — YAML settings and environment variables.
+- [Configuration and environment](configuration.md) — YAML settings and environment variables.
 - [Deployment](DEPLOYMENT.md) — Docker, Compose, API/worker, MinIO, Redis, CPU/GPU, and credential injection.
 - [Outputs](OUTPUTS.md) — probability rasters, masks, vectors, metadata, and object-store results.
 - [Architecture](ARCHITECTURE.md) — acquisition → preprocessing → inference → post-processing flow.

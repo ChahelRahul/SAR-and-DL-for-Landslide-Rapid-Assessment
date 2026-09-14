@@ -4,7 +4,7 @@ from pathlib import Path
 def test_comprehensive_docs_are_present():
     required = {
         "README.md", "API.md", "ACQUISITION_PROVIDERS.md", "CLI.md",
-        "CONFIGURATION.md", "DEPLOYMENT.md", "OUTPUTS.md", "ARCHITECTURE.md",
+        "configuration.md", "DEPLOYMENT.md", "OUTPUTS.md", "ARCHITECTURE.md",
         "SECURITY.md", "TROUBLESHOOTING.md", "openapi.json",
     }
     assert required.issubset({p.name for p in Path("docs").iterdir() if p.is_file()})
