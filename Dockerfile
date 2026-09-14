@@ -21,13 +21,14 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /opt/sar-lra
 
 RUN apt-get update \
+    && apt-get upgrade --yes \
     && apt-get install --yes --no-install-recommends libexpat1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install the large, pinned runtime dependency set before copying application
 # sources so normal code changes do not invalidate the dependency layer.
 COPY requirements/docker-cpu.txt /tmp/docker-cpu.txt
-RUN python -m pip install --upgrade "pip==25.2" \
+RUN python -m pip install --upgrade "pip==25.2" "setuptools==80.9.0" "wheel==0.46.2" \
     && python -m pip install --only-binary=:all: -r /tmp/docker-cpu.txt
 
 COPY pyproject.toml README.md LICENSE MODEL_CARD.md ./
