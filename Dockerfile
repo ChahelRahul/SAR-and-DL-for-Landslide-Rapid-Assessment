@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 # Reproducible CPU runtime for SAR-LRA.
-# Pinned to the Python 3.11.13 slim-bookworm multi-platform manifest digest.
-ARG PYTHON_IMAGE=python:3.11.13-slim-bookworm@sha256:86adf8dbadc3d6e82ee5dd2c74bec2e1c2467cdad47886280501df722372d2e1
+# Pinned to the Python 3.13.14 slim-bookworm multi-platform manifest digest.
+ARG PYTHON_IMAGE=python:3.13.14-slim-bookworm@sha256:dd86541a59b252667f4c12f8b2ee17216de37dd65ac773bf097bef996fa78860
 FROM --platform=linux/amd64 ${PYTHON_IMAGE}
 
 LABEL org.opencontainers.image.title="SAR-LRA CPU"
@@ -48,13 +48,13 @@ RUN python -m pip install --no-deps .
 # Normalize security-sensitive packaging helpers after every dependency/project
 # install so the final filesystem cannot retain vulnerable metadata versions.
 RUN python -m pip install --upgrade --force-reinstall "wheel==0.46.2" "jaraco.context==6.1.0" \
-    && find /usr/local/lib/python3.11/site-packages -maxdepth 1 -type d \
+    && find /usr/local/lib/python3.13/site-packages -maxdepth 1 -type d \
         \( -name 'wheel-0.45.1.dist-info' -o -name 'jaraco.context-5.3.0.dist-info' \) \
         -exec rm -rf {} + \
     && python - <<'PYSEC'
 from importlib.metadata import version
 from pathlib import Path
-site = Path("/usr/local/lib/python3.11/site-packages")
+site = Path("/usr/local/lib/python3.13/site-packages")
 assert version("wheel") == "0.46.2", version("wheel")
 assert version("jaraco.context") == "6.1.0", version("jaraco.context")
 assert not list(site.glob("wheel-0.45.1.dist-info")), "stale vulnerable wheel metadata remains"

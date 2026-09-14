@@ -1,13 +1,13 @@
 # SAR-LRA CPU container direct dependency lock.
 # Keep these exact pins in sync with docs/issue-15-cpu-docker.md.
-# Python runtime: CPython 3.11.13, linux/amd64.
-numpy==1.26.4
+# Python runtime: CPython 3.13.14, linux/amd64.
+numpy==2.2.6
 PyYAML==6.0.2
 rasterio==1.4.3
 geopandas==1.1.4
 shapely==2.0.7
 pyproj==3.7.0
-tensorflow-cpu==2.18.0
+tensorflow-cpu==2.21.0
 earthengine-api==1.6.6
 geemap==0.36.1
 leafmap==0.52.1

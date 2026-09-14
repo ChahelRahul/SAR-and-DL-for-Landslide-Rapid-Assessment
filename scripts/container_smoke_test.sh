@@ -9,9 +9,9 @@ python "${APP_ROOT}/scripts/verify_model_weights.py" \
   --directory "${APP_ROOT}/model/weights"
 python - <<'PY'
 import tensorflow as tf
-assert tf.__version__ == "2.18.0", tf.__version__
+assert tf.__version__ == "2.21.0", tf.__version__
 assert tf.config.list_physical_devices("GPU") == [], "GPU visible in CPU image"
-print("tensorflow_cpu=2.18.0")
+print("tensorflow_cpu=2.21.0")
 PY
 
 # Lightweight geospatial and CLI import checks.

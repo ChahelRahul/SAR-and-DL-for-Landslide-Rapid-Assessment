@@ -8,7 +8,7 @@ SAR-LRA keeps the CPU image (`Dockerfile`, tag `sar-lra:cpu`) as the default dep
 docker build --platform linux/amd64 -f Dockerfile.gpu -t sar-lra:gpu .
 ```
 
-The image uses CPython 3.11.13 on the same digest-pinned slim-bookworm base as the CPU image and installs `tensorflow[and-cuda]==2.18.0`. TensorFlow's Linux pip GPU installation supplies the compatible CUDA/cuDNN user-space packages. The host must still provide a compatible NVIDIA driver and NVIDIA Container Toolkit.
+The image uses CPython 3.13.14 on the same digest-pinned slim-bookworm base as the CPU image and installs `tensorflow[and-cuda]==2.21.0`. TensorFlow's Linux pip GPU installation supplies the compatible CUDA/cuDNN user-space packages. The host must still provide a compatible NVIDIA driver and NVIDIA Container Toolkit.
 
 A physical GPU is not required to **build** the image. GPU availability is a runtime property.
 

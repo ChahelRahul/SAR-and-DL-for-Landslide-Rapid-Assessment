@@ -7,13 +7,13 @@ The repository root now contains a production CPU `Dockerfile`. It targets
 read-only input mount and `/output` as the writable result mount, and uses
 `sar-lra` as its entrypoint.
 
-The base is pinned to CPython 3.11.13 slim-bookworm by immutable manifest
+The base is pinned to CPython 3.13.14 slim-bookworm by immutable manifest
 digest. Runtime Python packages used by the image are exact-pinned in
 `requirements/docker-cpu.txt`. The image installs the repository itself with
 `--no-deps`, preventing `pyproject.toml` ranges from silently changing the
 container dependency set.
 
-The image intentionally uses `tensorflow-cpu==2.18.0` and sets
+The image intentionally uses `tensorflow-cpu==2.21.0` and sets
 `CUDA_VISIBLE_DEVICES=-1`. It does not install CUDA, cuDNN, or an NVIDIA base
 image.
 

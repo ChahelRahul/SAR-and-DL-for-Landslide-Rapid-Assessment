@@ -5,7 +5,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def test_gpu_dockerfile_is_separate_pinned_non_root_image():
     text = (ROOT / "Dockerfile.gpu").read_text()
-    assert "python:3.11.13-slim-bookworm@sha256:" in text
+    assert "python:3.13.14-slim-bookworm@sha256:" in text
     assert "FROM --platform=linux/amd64" in text
     assert "requirements/docker-gpu.txt" in text
     assert "CUDA_VISIBLE_DEVICES=-1" not in text
@@ -18,8 +18,8 @@ def test_gpu_dockerfile_is_separate_pinned_non_root_image():
 def test_gpu_dependency_file_uses_tensorflow_cuda_extra_and_exact_pins():
     lines = (ROOT / "requirements/docker-gpu.txt").read_text().splitlines()
     requirements = [line.strip() for line in lines if line.strip() and not line.startswith("#")]
-    assert "tensorflow[and-cuda]==2.18.0" in requirements
-    assert "tensorflow-cpu==2.18.0" not in requirements
+    assert "tensorflow[and-cuda]==2.21.0" in requirements
+    assert "tensorflow-cpu==2.21.0" not in requirements
     assert all("==" in req for req in requirements)
 
 
@@ -46,5 +46,5 @@ def test_cpu_image_contract_is_unchanged_by_gpu_variant():
     cpu = (ROOT / "Dockerfile").read_text()
     cpu_req = (ROOT / "requirements/docker-cpu.txt").read_text()
     assert "CUDA_VISIBLE_DEVICES=-1" in cpu
-    assert "tensorflow-cpu==2.18.0" in cpu_req
+    assert "tensorflow-cpu==2.21.0" in cpu_req
     assert "tensorflow[and-cuda]" not in cpu_req

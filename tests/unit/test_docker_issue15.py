@@ -5,9 +5,9 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def test_dockerfile_is_cpu_only_pinned_and_non_root():
     text = (ROOT / "Dockerfile").read_text()
-    assert "python:3.11.13-slim-bookworm@sha256:" in text
+    assert "python:3.13.14-slim-bookworm@sha256:" in text
     assert "FROM --platform=linux/amd64" in text
-    assert "tensorflow-cpu==2.18.0" not in text  # dependency belongs in lock file
+    assert "tensorflow-cpu==2.21.0" not in text  # dependency belongs in lock file
     assert "CUDA_VISIBLE_DEVICES=-1" in text
     assert "USER 10001:10001" in text
     assert 'ENTRYPOINT ["sar-lra"]' in text
@@ -18,7 +18,7 @@ def test_cpu_dependency_file_uses_exact_pins():
     path = ROOT / "requirements" / "docker-cpu.txt"
     lines = [line.strip() for line in path.read_text().splitlines()]
     requirements = [line for line in lines if line and not line.startswith("#")]
-    assert "tensorflow-cpu==2.18.0" in requirements
+    assert "tensorflow-cpu==2.21.0" in requirements
     assert not any("tensorflow==" in req for req in requirements)
     assert all("==" in req for req in requirements)
 
