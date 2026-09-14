@@ -43,8 +43,19 @@ COPY examples ./examples
 
 # The project itself is installed without dependency resolution: container
 # dependencies are controlled only by requirements/docker-cpu.txt.
-RUN python -m pip install --no-deps . \
-    && python scripts/verify_model_weights.py \
+RUN python -m pip install --no-deps .
+
+# Normalize security-sensitive packaging helpers after every dependency/project
+# install so the final filesystem cannot retain vulnerable metadata versions.
+RUN python -m pip install --upgrade --force-reinstall "wheel==0.46.2" "jaraco.context==6.1.0" \
+    && python - <<'PYSEC'
+from importlib.metadata import version
+assert version("wheel") == "0.46.2", version("wheel")
+assert version("jaraco.context") == "6.1.0", version("jaraco.context")
+print("security_pins=ok")
+PYSEC
+
+RUN python scripts/verify_model_weights.py \
     && sar-lra --help >/dev/null \
     && sar-lra-api --help >/dev/null \
     && python - <<'PY'

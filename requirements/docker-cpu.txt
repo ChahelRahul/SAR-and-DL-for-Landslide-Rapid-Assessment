@@ -17,3 +17,7 @@ uvicorn==0.48.0
 
 redis==6.4.0
 boto3==1.40.30
+
+# Security-normalized runtime tooling
+wheel==0.46.2
+jaraco.context==6.1.0
