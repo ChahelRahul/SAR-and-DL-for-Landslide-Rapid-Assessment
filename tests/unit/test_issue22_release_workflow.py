@@ -56,5 +56,12 @@ def test_semantic_release_tags_have_overwrite_guards():
 
 def test_registry_names_match_public_contract():
     text = _text()
-    assert "CPU_IMAGE: ghcr.io/${{ github.repository_owner }}/sar-lra" in text
-    assert "GPU_IMAGE: ghcr.io/${{ github.repository_owner }}/sar-lra-gpu" in text
+    assert "CPU_IMAGE: ghcr.io/chahelrahul/sar-lra" in text
+    assert "GPU_IMAGE: ghcr.io/chahelrahul/sar-lra-gpu" in text
+
+
+def test_ghcr_image_references_are_lowercase():
+    workflow = (ROOT / ".github/workflows/publish-images.yml").read_text(encoding="utf-8")
+    assert "CPU_IMAGE: ghcr.io/chahelrahul/sar-lra" in workflow
+    assert "GPU_IMAGE: ghcr.io/chahelrahul/sar-lra-gpu" in workflow
+    assert "ghcr.io/${{ github.repository_owner }}" not in workflow
