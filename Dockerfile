@@ -6,7 +6,7 @@ FROM --platform=linux/amd64 ${PYTHON_IMAGE}
 
 LABEL org.opencontainers.image.title="SAR-LRA CPU"
 LABEL org.opencontainers.image.description="CPU-only Sentinel-1 SAR landslide rapid-assessment CLI"
-LABEL org.opencontainers.image.version="2.0.0-beta.1"
+LABEL org.opencontainers.image.version="2.0.0"
 LABEL org.opencontainers.image.licenses="MIT"
 
 ENV PYTHONUNBUFFERED=1 \
@@ -20,6 +20,10 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /opt/sar-lra
 
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends libexpat1 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install the large, pinned runtime dependency set before copying application
 # sources so normal code changes do not invalidate the dependency layer.
 COPY requirements/docker-cpu.txt /tmp/docker-cpu.txt
@@ -32,6 +36,7 @@ COPY config ./config
 COPY model ./model
 COPY schemas ./schemas
 COPY scripts ./scripts
+RUN chmod 0755 /opt/sar-lra/scripts/*.sh
 COPY docs ./docs
 COPY examples ./examples
 

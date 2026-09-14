@@ -28,6 +28,10 @@ cache/
 # Keep canonical model weights tracked intentionally
 !model/weights/*.hdf5
 
+# Keep required regression/quickstart raster fixtures tracked intentionally
+!tests/fixtures/reference/*.tif
+!examples/quickstart/ascending-4band.tif
+
 # Local credentials
 .env
 *.service-account.json
